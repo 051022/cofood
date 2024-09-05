@@ -214,7 +214,7 @@ body {
 .image {
   width: 170px;
   height: 264px;
-  background-image: url(./image/《食卡Cofood》logo@2x.png);
+  background-image: url(../../image/《食卡Cofood》logo@2x.png);
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   margin: 151px 240px 235px 240px;
@@ -232,7 +232,7 @@ body {
   width: 96px;
   height: 31px;
   margin: 40px 152px;
-  background-image: url(./image/账号注册@2x.png);
+  background-image: url(../../image/账号注册@2x.png);
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
 }
@@ -277,15 +277,15 @@ body {
 }
 
 .checkCode .img {
-  background-image: url(./image/验证码@2x.png);
+  background-image: url(../../image/验证码@2x.png);
 }
 
 .account .img {
-  background-image: url(./image/我的@2x.png);
+  background-image: url(../../image/我的@2x.png);
 }
 
 .password .img {
-  background-image: url(./image/密码@2x.png);
+  background-image: url(../../image/密码@2x.png);
 }
 
 .checkCode button {

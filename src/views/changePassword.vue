@@ -199,7 +199,7 @@ body {
 .image {
   width: 170px;
   height: 264px;
-  background-image: url(./image/《食卡Cofood》logo@2x.png);
+  background-image: url(../../image/《食卡Cofood》logo@2x.png);
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   margin: 151px 240px 235px 240px;
@@ -225,7 +225,7 @@ body {
 .loginInput .account .img {
   width: 22px;
   height: 22px;
-  background-image: url(./image/我的@2x.png);
+  background-image: url(../../image/我的@2x.png);
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   position: absolute;
@@ -236,7 +236,7 @@ body {
 .loginInput .password .img {
   width: 22px;
   height: 22px;
-  background-image: url(./image/密码@2x.png);
+  background-image: url(../../image/密码@2x.png);
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   position: absolute;
