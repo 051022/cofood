@@ -146,7 +146,7 @@ body {
   float: left;
   top: 33px;
   margin: 0 28px 33px 42px;
-  background-image: url(./image/蒙版组\ 44@2x.png);
+  background-image: url(../../image/蒙版组\ 44@2x.png);
   background-size: contain; /* 设置背景图覆盖整个容器 */
   background-repeat: no-repeat; /* 禁止背景图片重复 */
   background-position: center; /* 设置背景图位置居中 */
@@ -233,16 +233,16 @@ body {
   justify-content: center;
 }
 .f1 {
-  background-image: url(./image/优惠券@2x.png);
+  background-image: url(../../image/优惠券@2x.png);
 }
 .f2 {
-  background-image: url(./image/收藏3@2x.png);
+  background-image: url(../../image/收藏3@2x.png);
 }
 .f3 {
-  background-image: url(./image/购物车@2x.png);
+  background-image: url(../../image/购物车@2x.png);
 }
 .f4 {
-  background-image: url(./image/订单@2x.png);
+  background-image: url(../../image/订单@2x.png);
 }
 .myNotes {
   width: 798px;
