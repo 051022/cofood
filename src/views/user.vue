@@ -293,7 +293,7 @@ body {
 .member .image {
   width: 24px;
   height: 24px;
-  background-image: url(./image/会员@2x.png);
+  background-image: url(../../image/会员@2x.png);
   background-size: contain; /* 设置背景图覆盖整个容器 */
   background-repeat: no-repeat; /* 禁止背景图片重复 */
   background-position: center; /* 设置背景图位置居中 */
@@ -369,19 +369,19 @@ body {
   background-position: center; /* 设置背景图位置居中 */
 }
 .i1 {
-  background-image: url(./image/客服@2x.png);
+  background-image: url(../../image/客服@2x.png);
 }
 .i2 {
-  background-image: url(./image/设置@2x.png);
+  background-image: url(../../image/设置@2x.png);
 }
 .i3 {
-  background-image: url(./image/隐私@2x.png);
+  background-image: url(../../image/隐私@2x.png);
 }
 .i4 {
-  background-image: url(./image/问号@2x.png);
+  background-image: url(../../image/问号@2x.png);
 }
 .i5 {
-  background-image: url(./image/提醒-1@2x.png);
+  background-image: url(../../image/提醒-1@2x.png);
 }
 button {
   position: relative;
