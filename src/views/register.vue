@@ -10,7 +10,7 @@ const router = useRouter();
 const email = ref("");
 const password = ref("");
 const repassword = ref("");
-const verificationCode = ref("");
+const verifyCode = ref("");
 const countdown = ref(0); // 添加倒计时计数器
 
 // 发送邮箱验证码
@@ -64,7 +64,7 @@ const RegisterUser = async () => {
     alert("两次输入密码不一致！");
     return;
   }
-  if (!verificationCode.value) {
+  if (!verifyCode.value) {
     alert("请输入验证码");
     return;
   }
@@ -73,7 +73,7 @@ const RegisterUser = async () => {
     const data = {
       email: email.value, // 修正获取输入框的值
       password: password.value, // 修正获取输入框的值
-      verifyCode: verificationCode.value,
+      verifyCode: verifyCode.value,
     };
 
     // 发送 POST 请求
@@ -158,7 +158,7 @@ const RegisterUser = async () => {
               <div class="img"></div>
               <input
                 type="text"
-                v-model="verificationCode"
+                v-model="verifyCode"
                 placeholder="请输入验证码"
               />
               <button @click="sendVerificationCode" :disabled="countdown > 0">

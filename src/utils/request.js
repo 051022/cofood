@@ -1,4 +1,4 @@
-import store from '@/store'
+import store from '../store/indexs'
 import axios from 'axios'
 import { Toast } from 'vant'
 

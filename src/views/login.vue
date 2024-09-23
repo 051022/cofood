@@ -3,11 +3,13 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import Qs from "qs";
+import { useStore } from "vuex";
 
 const username = ref("");
 const password = ref("");
 
 const router = useRouter();
+const store = useStore();
 
 const loginUser = () => {
   if (!username.value) {
@@ -36,7 +38,7 @@ const loginUser = () => {
             console.log(loginRes);
             alert("登录成功");
 
-            //token存入vuex
+            token存入vuex;
             this.$store.commit("user/setUserInfo", loginRes.data);
 
             router.push("/home");

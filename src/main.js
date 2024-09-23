@@ -14,12 +14,11 @@ import shoppingCartItem from './components/shoppingCartItem.vue';
 import comment from './components/comment.vue';
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-// import Vant from "vant"
-// import 'vant/lib/index.css';
-// Vue.use(Vant)
+// import store from './store/indexs';
 
 createApp(App).use(router)
     .use(ElementPlus)
+    // .use(store)
     .component('Navigation', Navigation)
     .component('userCenterNavigation', userCenterNavigation)
     .component('mealRecommand', mealRecommand)

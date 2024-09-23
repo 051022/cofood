@@ -20,6 +20,7 @@
             })`,
           }"
         ></div>
+
         <div
           class="icon cart"
           @click="addToCart"
@@ -36,6 +37,8 @@
 
 <script setup>
 import { ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import store from "../store/modules/user";
 
 const count = ref(0);
 const increment = () => {
@@ -49,15 +52,51 @@ const decrement = () => {
 
 const isFavorite = ref(false);
 const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value;
-  if (isFavorite.value === false) alert("已取消收藏");
-  else alert("已收藏");
+  //判断token是否存在
+  const token = store.getters.token;
+  if (!token) {
+    //弹确认框
+    ElMessageBox.confirm("温馨提示：需要先登录才可以加入收藏哦", "Warning", {
+      confirmButtonText: "登录",
+      cancelButtonText: "再看看",
+    })
+      .then(() => {
+        //跳转登录页面
+      })
+      .catch(() => {
+        ElMessage({
+          message: "未登录",
+        });
+      });
+  } else {
+    isFavorite.value = !isFavorite.value;
+    if (isFavorite.value === false) alert("已取消收藏");
+    else alert("已收藏");
+  }
 };
 
 const isCart = ref(false);
 const addToCart = () => {
-  alert("商品已经加入购物车");
-  isCart.value = 1;
+  //判断token是否存在
+  const token = store.getters.token;
+  if (!token) {
+    //弹确认框
+    ElMessageBox.confirm("温馨提示：需要先登录才可以加入购物车哦", "Warning", {
+      confirmButtonText: "登录",
+      cancelButtonText: "再看看",
+    })
+      .then(() => {
+        //跳转登录页面
+      })
+      .catch(() => {
+        ElMessage({
+          message: "未登录",
+        });
+      });
+  } else {
+    alert("商品已经加入购物车");
+    isCart.value = 1;
+  }
 };
 </script>
 
