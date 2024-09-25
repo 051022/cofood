@@ -118,7 +118,7 @@ const routes = [
 
 // 创建实例
 const router = createRouter({
-  history: createWebHashHistory(), // or createWebHistory()
+  history: createWebHashHistory(),
   routes
 })
 

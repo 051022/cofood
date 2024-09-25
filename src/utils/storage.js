@@ -1,5 +1,5 @@
 //约定一个通用的键名
-const INFO_KEY = 'hm_shopping_info'
+const INFO_KEY = 'userInfo'
 
 //获取个人信息
 export const getInfo = () => {

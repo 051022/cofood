@@ -2,11 +2,12 @@
   <div class="cart-item">
     <input
       type="checkbox"
-      class="checkbox"
+      class="checkbox1"
       v-model="localSelected"
       id="myCheckbox"
       @change="handleSelectionChange"
     />
+
     <label for="myCheckbox" class="checkbox-label"></label>
 
     <img src="../../foodPictures/拿铁.webp" class="product-image" />

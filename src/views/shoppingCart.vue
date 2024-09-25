@@ -75,7 +75,7 @@
       </div>
     </div>
     <div class="bottom">
-      <inputs
+      <input
         type="checkbox"
         class="checkbox1"
         v-model="isAllSelected"
@@ -196,7 +196,7 @@ const totalPrice = computed(() => {
 });
 
 const checkout = () => {
-  alert("去结算");
+  alert(`去结算，金额为：${totalPrice.value}元`);
 };
 </script>
 
@@ -291,4 +291,4 @@ body {
   top: -30px;
   align-items: center;
 }
-</style>
+</style>我的shoppingCartItem中的img的路径不想写死，而是从后端获取

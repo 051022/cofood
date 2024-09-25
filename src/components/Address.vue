@@ -75,53 +75,50 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      dialogVisible: false,
-      formData: {
-        recipient: "奇异果",
-        region: "广东省广州市番禺区",
-        address: "小谷围岛228号",
-        tag: "学校",
-        phone: "12133445566",
-      },
-      editData: {
-        recipient: "",
-        region: "",
-        address: "",
-        tag: "",
-        phone: "",
-      },
-    };
-  },
-  methods: {
-    handleClose() {
-      console.log("关闭按钮点击");
-    },
-    handleSetDefault() {
-      console.log("设为默认按钮点击");
-    },
-    handleEdit() {
-      // 复制 formData 到 editData
-      this.editData = { ...this.formData };
-      // 显示编辑对话框
-      this.dialogVisible = true;
-    },
-    handleDialogClose() {
-      // 关闭对话框
-      this.dialogVisible = false;
-    },
-    handleSave() {
-      // 更新 formData
-      this.formData = { ...this.editData };
-      // 关闭对话框
-      this.dialogVisible = false;
-    },
-  },
-};
-</script>
+<script setup>
+import { ref } from "vue";
+
+const dialogVisible = ref(false);
+const formData = ref({
+  recipient: "奇异果",
+  region: "广东省广州市番禺区",
+  address: "小谷围岛228号",
+  tag: "学校",
+  phone: "12133445566",
+  stickPhone: "",
+});
+const editData = ref({
+  recipient: "",
+  region: "",
+  address: "",
+  tag: "",
+  phone: "",
+  stickPhone: "",
+});
+
+function handleClose() {
+  console.log("关闭按钮点击");
+}
+
+function handleSetDefault() {
+  console.log("设为默认按钮点击");
+}
+
+function handleEdit() {
+  editData.value = { ...formData.value };
+  dialogVisible.value = true;
+}
+
+function handleDialogClose() {
+  dialogVisible.value = false;
+}
+
+function handleSave() {
+  formData.value = { ...editData.value };
+  dialogVisible.value = false;
+}
+</script>  
+  
 
 <style scoped>
 .informations {

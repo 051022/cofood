@@ -36,12 +36,13 @@ const loginUser = () => {
         if (response.status === 200) {
           if (loginRes.code === 200) {
             console.log(loginRes);
+
+            // token存入vuex;
+            // console.log(this.$store);
+            // this.$store.commit("user/setUserInfo", loginRes.data.token);
+
+            router.push("/user");
             alert("登录成功");
-
-            token存入vuex;
-            this.$store.commit("user/setUserInfo", loginRes.data);
-
-            router.push("/home");
           } else if (loginRes.code === 401) {
             console.log(loginRes);
             alert("密码错误");

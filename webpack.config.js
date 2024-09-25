@@ -1,25 +1,39 @@
 const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
+    mode: 'development',
     entry: './src/main.js',
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
+
     },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            template: './src/index.html'
+        })
+    ],
     resolve: {
-        alias: {
-            'vue': 'vue/dist/vue.esm-browser.js'
-        },
+        extensions: ['.js', '.vue', '.json'],
     },
     module: {
         rules: [
             {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                use: {
-                    loader: 'babel-loader',
-                },
+                test: /\.vue$/,
+                loader: 'vue-loader'
             },
+            {
+                test: /\.css$/,
+                use: [
+                    'vue-style-loader', // 或 'style-loader'  
+                    'css-loader'
+                ]
+            },
+            // 其他 loader 配置...  
         ],
     },
+    // 其他 Webpack 配置...  
 };

@@ -1,1 +1,0 @@
-import{_ as a,b as t,o as c,d,h as e,f as s}from"./index-CCIVWZYI.js";const _={},i={class:"container"},l={class:"banner"},f={class:"leftBanner"};function m(p,n){const r=t("userCenterNavigation"),o=t("Address");return c(),d("div",i,[e(r),s("div",l,[s("div",f,[n[0]||(n[0]=s("div",{class:"add"},"新增收货地址",-1)),e(o),e(o)])])])}const u=a(_,[["render",m]]);export{u as default};
