@@ -1,6 +1,6 @@
 
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
-import store from '../store/modules/user'
+
 
 
 const login = () => import('../views/login.vue')
@@ -123,7 +123,7 @@ const router = createRouter({
 })
 
 //全局前置导航守卫
-const authUrls = ['/home']
+const authUrls = ['user']
 
 router.beforeEach((to, from, next) => {
   if (!authUrls.includes(to.path)) {

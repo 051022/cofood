@@ -78,7 +78,10 @@ const RegisterUser = async () => {
 
     // 发送 POST 请求
     axios
-      .post("http://www.femto.fun/user-register-email", Qs.stringify(data))
+      .post(
+        "http://127.0.0.1:4523/m1/4260973-0-default/user-register-email",
+        Qs.stringify(data)
+      )
       .then((response) => {
         const Res = response.data; // 获取响应数据
         if (response.status === 200) {

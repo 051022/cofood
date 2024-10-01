@@ -2,28 +2,28 @@
 import { createApp } from 'vue';
 // 引入Vuex 4  
 import { createStore } from 'vuex';
-// 引入你的模块  
-import user from './modules/user';
+
 
 // 创建store  
 const store = createStore({
-    state() {
-        return {
-            // 你的状态  
-        };
-    },
-    getters: {
-        // 你的getters  
+    state: {
+        token: null,
     },
     mutations: {
-        // 你的mutations  
+        SET_TOKEN(state, token) {
+            state.token = token;
+        },
     },
     actions: {
-        // 你的actions  
+        saveToken({ commit }, token) {
+            commit('SET_TOKEN', token);
+        },
     },
     modules: {
-        user,
-    }
+    },
+    getters: {
+        token: state => state.token,
+    },
 });
 
 // 导出store以便在其他文件中使用  

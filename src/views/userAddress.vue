@@ -5,7 +5,6 @@
       <div class="leftBanner">
         <div class="add">新增收货地址</div>
         <Address></Address>
-        <Address></Address>
       </div>
     </div>
   </div>

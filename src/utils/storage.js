@@ -10,7 +10,7 @@ export const getInfo = () => {
 
 //设置个人信息
 export const setInfo = (obj) => {
-    localStorage.setItem(INFO_KEY, JSON.stringify(onj))
+    localStorage.setItem(INFO_KEY, JSON.stringify(obj))
 }
 
 //移除个人信息

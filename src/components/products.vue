@@ -38,7 +38,6 @@
 <script setup>
 import { ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import store from "../store/modules/user";
 
 const count = ref(0);
 const increment = () => {

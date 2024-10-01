@@ -77,17 +77,23 @@
 
 <script setup>
 import { ref } from "vue";
+import axios from "axios";
+import { useStore } from "vuex";
+import { onMounted } from "vue";
+
+// 使用useStore钩子来获取store实例
+const store = useStore();
+
+// 使用ref来创建一个响应式的token变量
+const token = ref(store.getters.token);
+
+// 检查token是否存在
+if (!token.value) {
+  console.error("Token not found!");
+}
 
 const dialogVisible = ref(false);
 const formData = ref({
-  recipient: "奇异果",
-  region: "广东省广州市番禺区",
-  address: "小谷围岛228号",
-  tag: "学校",
-  phone: "12133445566",
-  stickPhone: "",
-});
-const editData = ref({
   recipient: "",
   region: "",
   address: "",
@@ -95,7 +101,43 @@ const editData = ref({
   phone: "",
   stickPhone: "",
 });
+const editData = ref({ ...formData.value }); // 初始时复制formData
 
+function fetchData() {
+  axios
+    .get("http://127.0.0.1:4523/m1/4260973-0-default/address", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((response) => {
+      formData.value = response.data; // 确保后端返回的数据结构与formData匹配
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+    });
+}
+
+function handleSave() {
+  axios
+    .post(
+      "http://127.0.0.1:4523/m1/4260973-0-default/address",
+      editData.value,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((response) => {
+      formData.value = { ...editData.value }; // 更新formData
+      dialogVisible.value = false; // 关闭对话框
+      console.log("数据上传成功", response.data);
+    })
+    .catch((error) => {
+      console.error("Error saving data:", error);
+    });
+}
 function handleClose() {
   console.log("关闭按钮点击");
 }
@@ -113,10 +155,9 @@ function handleDialogClose() {
   dialogVisible.value = false;
 }
 
-function handleSave() {
-  formData.value = { ...editData.value };
-  dialogVisible.value = false;
-}
+onMounted(() => {
+  fetchData();
+});
 </script>  
   
 

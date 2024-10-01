@@ -12,13 +12,26 @@ const router = useRouter();
 const store = useStore();
 
 const loginUser = () => {
+  // 检查邮箱是否为空
   if (!username.value) {
     alert("邮箱不能为空");
     return;
   }
+  // 检查邮箱格式是否正确
+  var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+  if (!emailPattern.test(username.value)) {
+    alert("邮箱格式不正确");
+    return false; // 阻止表单提交
+  }
+  //检查密码是否为空
   if (!password.value) {
     alert("密码不能为空");
     return;
+  }
+  // 检查密码长度是否大于等于6位
+  if (password.value.length < 6) {
+    alert("密码必须大于等于六位数");
+    return false; // 阻止表单提交
   }
   try {
     // 定义要传递的数据对象
@@ -37,11 +50,14 @@ const loginUser = () => {
           if (loginRes.code === 200) {
             console.log(loginRes);
 
-            // token存入vuex;
-            // console.log(this.$store);
-            // this.$store.commit("user/setUserInfo", loginRes.data.token);
+            if (loginRes.data.token) {
+              // 使用Vuex保存token
+              store.dispatch("saveToken", loginRes.data.token);
+              console.log("Token saved successfully to Vuex!");
+              console.log(loginRes.data.token);
+            }
 
-            router.push("/user");
+            router.push("/home");
             alert("登录成功");
           } else if (loginRes.code === 401) {
             console.log(loginRes);
@@ -49,6 +65,7 @@ const loginUser = () => {
           } else {
             console.log(loginRes);
             alert("登录失败");
+            alert(loginRes.msg);
           }
         } else {
           console.error("登录请求失败:", response);
