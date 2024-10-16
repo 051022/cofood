@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 
@@ -43,6 +43,14 @@ const handleLoginLogout = () => {
 
 const userInfo = computed(() => store.state.user.userInfo);
 const avatar = computed(() => userInfo.value.avatar || "默认头像URL");
+
+onMounted(async () => {
+  if (store.getters.token) {
+    if (!store.state.user.userInfo.username) {
+      await store.dispatch("fetchUserInfo");
+    }
+  }
+});
 </script>
 
 <template>

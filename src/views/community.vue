@@ -83,18 +83,30 @@ const removeImage = (index) => {
 onMounted(async () => {
   try {
     const response = await getNotes();
-    allNotes.value = response.data.notes.map((note) => ({
-      ...note,
-      upvoteCount: note.upvoteCount || 0,
-      collectCount: note.collectCount || 0,
-      commentCount: note.commentCount || 0,
-      upvoted: false,
-      collected: false,
-      isOwnNote: note.UserID === store.state.user.userInfo.id,
-    }));
-    console.log(allNotes.value);
+    console.log("API 响应:", response); // 添加这行来查看完整的响应
+
+    if (response && response.data && Array.isArray(response.data.notes)) {
+      allNotes.value = response.data.notes.map((note) => ({
+        ...note,
+        upvoteCount: note.upvoteCount || 0,
+        collectCount: note.collectCount || 0,
+        commentCount: note.commentCount || 0,
+        upvoted: false,
+        collected: false,
+        isOwnNote: note.UserID === store.state.user.userInfo.id,
+      }));
+      console.log("处理后的笔记:", allNotes.value);
+    } else {
+      console.error("API 返回的数据结构不符合预期:", response);
+      allNotes.value = []; // 设置为空数组以避免进一步的错误
+    }
   } catch (error) {
     console.error("获取笔记失败:", error);
+    if (error.response) {
+      console.error("错误响应:", error.response.data);
+      console.error("状态码:", error.response.status);
+    }
+    allNotes.value = []; // 出错时设置为空数组
   }
 });
 
@@ -114,7 +126,7 @@ const userAvatar = computed(() => {
 // 修改 addNewNote 函数
 const addNewNote = async () => {
   if (!token.value) {
-    console.error("没有找到token, 请先登");
+    console.error("没有找到token, 请先登录");
     return;
   }
 
@@ -129,39 +141,52 @@ const addNewNote = async () => {
 
     const response = await addNoteAPI(formData, token.value);
 
-    console.log("Response:", response.data);
+    console.log("完整的服务器响应:", response);
 
-    const newNoteData = {
-      NoteID: response.data.NoteID,
-      UserID: store.state.user.userInfo.id,
-      Title: newNote.value.title,
-      Content: newNote.value.content,
-      CreatedAt: new Date().toISOString(),
-      UpdatedAt: new Date().toISOString(),
-      NotesImages: response.data.NotesImages.map((image) => ({
-        ImageID: image.ImageID,
+    if (response && response.data) {
+      console.log("服务器返回的数据:", response.data);
+
+      const newNoteData = {
         NoteID: response.data.NoteID,
-        URL: image.URL,
+        UserID: store.state.user.userInfo.id,
+        Title: newNote.value.title,
+        Content: newNote.value.content,
         CreatedAt: new Date().toISOString(),
         UpdatedAt: new Date().toISOString(),
-      })),
-      upvoteCount: 0,
-      collectCount: 0,
-      commentCount: 0,
-      upvoted: false,
-      collected: false,
-      isOwnNote: true,
-    };
+        NotesImages: Array.isArray(response.data.NotesImages)
+          ? response.data.NotesImages.map((image) => ({
+              ImageID: image.ImageID,
+              NoteID: response.data.NoteID,
+              URL: image.URL,
+              CreatedAt: new Date().toISOString(),
+              UpdatedAt: new Date().toISOString(),
+            }))
+          : [],
+        upvoteCount: 0,
+        collectCount: 0,
+        commentCount: 0,
+        upvoted: false,
+        collected: false,
+        isOwnNote: true,
+      };
 
-    allNotes.value.unshift(newNoteData);
-    newNote.value = { title: "", content: "", images: [] };
-    previewImages.value = [];
-    console.log("上传成功");
+      allNotes.value.unshift(newNoteData);
+      newNote.value = { title: "", content: "", images: [] };
+      previewImages.value = [];
+      console.log("上传成功");
+    } else {
+      console.error("服务器响应数据结构不符合预期");
+    }
   } catch (error) {
-    console.error(
-      "添加笔记失败:",
-      error.response ? error.response.data : error.message
-    );
+    console.error("添加笔记失败:", error);
+    if (error.response) {
+      console.error("错误响应:", error.response.data);
+      console.error("状态码:", error.response.status);
+    } else if (error.request) {
+      console.error("未收到响应:", error.request);
+    } else {
+      console.error("错误信息:", error.message);
+    }
   }
 };
 

@@ -3,6 +3,7 @@ import { createApp } from 'vue';
 // 引入Vuex 4  
 import { createStore } from 'vuex';
 import axios from 'axios';
+import createPersistedState from 'vuex-persistedstate';
 
 
 // 创建user模块
@@ -122,15 +123,15 @@ const store = createStore({
         },
     },
     actions: {
-        async fetchUserInfo(context) {
-            if (!context.state.token) {
+        async fetchUserInfo({ commit, state }) {
+            if (!state.token) {
                 console.error("No token available");
                 return;
             }
             try {
                 const response = await axios.get("https://www.femto.fun/user/information", {
                     headers: {
-                        Authorization: `Bearer ${context.state.token}`,
+                        Authorization: `Bearer ${state.token}`,
                     },
                 });
                 const { code, data } = response.data;
@@ -145,9 +146,9 @@ const store = createStore({
                         height: data.height || "",
                         weight: data.weight || "",
                     };
-                    context.commit('user/setUserInfo', userInfo);
+                    commit('user/setUserInfo', userInfo);
                     // 在获取用户信息后，立即获取身体数据
-                    await context.dispatch('user/fetchBodyData');
+                    await dispatch('user/fetchBodyData');
                 } else {
                     console.error("未能获取到有效的用户信息");
                 }
@@ -227,7 +228,13 @@ const store = createStore({
     },
     modules: {
         user: userModule
-    }
+    },
+    plugins: [
+        createPersistedState({
+            storage: window.localStorage,
+            paths: ['token', 'user.userInfo', 'user.bodyData'] // 确保包含所有需要持久化的状态
+        })
+    ]
 });
 
 // 导出store以便在其他文件中使用  
