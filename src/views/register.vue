@@ -93,14 +93,7 @@ const RegisterUser = async () => {
             console.log(Res);
             alert("注册失败");
           }
-        } else {
-          console.error("注册请求失败:", response);
-          alert("注册失败");
         }
-      })
-      .catch((error) => {
-        console.error("注册请求失败:", error);
-        alert("注册失败");
       });
   } catch (error) {
     console.error(error);
