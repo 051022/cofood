@@ -74,6 +74,32 @@ const toNextImg = () => {
   }
   ulDotList[index.value].classList.add("liActive");
 };
+
+// 轮播图自动播放
+setInterval(() => {
+  index.value++;
+  if (index.value >= bannerList.value.length) {
+    index.value = 0;
+  }
+  bannerImg.value.src = bannerList.value[index.value];
+  const ulDotList = ulContainer.value.children;
+  for (let i = 0; i < ulDotList.length; i++) {
+    ulDotList[i].classList.remove("liActive");
+  }
+  ulDotList[index.value].classList.add("liActive");
+}, 2000);
+
+// 用以接收服务器返回的商品列表的数据
+const proList = ref("");
+
+// 发起获取商品列表的请求
+import { getProListService } from "../api/shopping";
+const getProList = async () => {
+  const res = await getProListService();
+  console.log(res);
+  proList.value = res.list;
+};
+getProList();
 </script>
 
 <template>
@@ -125,7 +151,12 @@ const toNextImg = () => {
       </div>
       <!-- 内容区域 -->
       <div class="productContainer">
-        <ProductPage v-for="item in 15" :key="item"></ProductPage>
+        <products
+          isPrice="0"
+          :item="item"
+          v-for="item in proList"
+          :key="item.product_id"
+        ></products>
       </div>
     </div>
   </div>

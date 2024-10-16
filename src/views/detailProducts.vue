@@ -2,11 +2,12 @@
 // 导入ref
 import { onMounted, ref } from "vue";
 // 绑定数字框的变量
-const num = ref(0);
+const num = ref(1);
 // 绑定ul
 const scroll = ref(null);
 onMounted(() => {
-  scroll.value.children[0].classList.add("choose");
+  getProDetails();
+  // scroll.value.children[0].classList.add("choose");
 });
 // 用以轮播图片的数组
 const bannerList = ref([
@@ -56,6 +57,48 @@ const prevImg = () => {
   index.value--;
   li_List[index.value].classList.add("choose");
 };
+
+// 用以记录服务器返回的商品详细信息的变量
+const proDetails = ref("");
+// 用以记录服务器返回的商品的轮播图片
+const proBannerList = ref("");
+
+// 获取页面跳转携带的参数
+import { useRoute } from "vue-router";
+const route = useRoute();
+
+// 发起获取商品详细信息的请求
+import { getProDetailsService } from "../api/shopping";
+const getProDetails = async () => {
+  const res = await getProDetailsService(route.params.id, num.value);
+  console.log(res);
+  proDetails.value = res.product;
+  console.log(proDetails.value.ProductID);
+  proBannerList.value = res.images;
+};
+
+// 发起添加至购物车的请求
+import { useStore } from "vuex";
+const store = useStore();
+import { addProductService } from "../api/shopping";
+console.log(store.getters.token);
+console.log(proDetails.value.ProductID);
+console.log(Number(num.value));
+
+const addProduct = async () => {
+  console.log(proDetails.value.ProductID);
+
+  console.log(Number(num.value));
+
+  console.log("Bearer " + store.getters.token);
+
+  const res = await addProductService(
+    proDetails.value.ProductID,
+    Number(num.value),
+    "Bearer " + store.getters.token
+  );
+  console.log(res);
+};
 </script>
 
 <template>
@@ -81,31 +124,23 @@ const prevImg = () => {
       <div class="details">
         <div class="detailsImgBox">
           <div class="detailsImg">
-            <img :src="bannerList[index]" alt="" />
+            <img :src="proBannerList[index]" alt="" />
           </div>
           <!-- 滚动条 -->
           <div class="scrollBar">
             <div @click="prevImg" class="prevImg"></div>
             <div class="scrollImg">
               <ul ref="scroll">
-                <li v-for="ele in bannerList" :key="ele" class="item">
+                <li class="item choose">
+                  <img :src="proBannerList[0]" alt="" />
+                </li>
+                <li
+                  v-for="ele in proBannerList.slice(1, 5)"
+                  :key="ele"
+                  class="item"
+                >
                   <img :src="ele" alt="" />
                 </li>
-                <!-- <li class="item">
-                                    <img src="../../images/shopping/pic2.png" alt="">
-                                </li>
-                                <li class="item">
-                                    <img src="../../images/pic6.png" alt="">
-                                </li>
-                                <li class="item">
-                                    <img src="../../images/shopping/pic3.png" alt="">
-                                </li>
-                                <li class="item">
-                                    <img src="../../images/shopping/pic1.png" alt="">
-                                </li>
-                                <li class="item">
-                                    <img src="../../images/shopping/pic2.png" alt="">
-                                </li> -->
               </ul>
             </div>
             <div @click="nextImg" class="nextImg"></div>
@@ -131,7 +166,7 @@ const prevImg = () => {
             <input v-model="num" type="text" />
             <button @click="addNum" class="add">+</button>
 
-            <button class="addCart">加入购物车</button>
+            <button @click="addProduct" class="addCart">加入购物车</button>
           </div>
         </div>
         <!--  -->

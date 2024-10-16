@@ -36,7 +36,7 @@ h2 {
 }
 
 .food {
-  width: 200px;
+  width: 250px;
   height: 250px;
   margin: 50px 20px 50px 50px;
   float: left;

@@ -121,6 +121,9 @@ const store = createStore({
             state.token = '';
             localStorage.removeItem('token');
         },
+        getToken(state) {
+            return state.token
+        }
     },
     actions: {
         async fetchUserInfo({ commit, state }) {

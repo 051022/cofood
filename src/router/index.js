@@ -126,7 +126,7 @@ const routes = [
     component: AIPage
   },
   {
-    path: '/detailProducts',
+    path: '/detailProducts/:id',
     name: 'detailProducts',
     component: detailProducts
   },

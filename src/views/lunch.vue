@@ -4,7 +4,6 @@ import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import Navigation from "../components/Navigation.vue";
-import MealRecommand from "../components/MealRecommand.vue";
 
 const router = useRouter();
 const store = useStore();
@@ -94,27 +93,26 @@ onMounted(async () => {
         <router-link to="/recommand">点击返回推荐页</router-link>
       </div>
     </div>
-    <div class="lazyLoading">
-      <div v-if="isLoading">正在加载推荐...</div>
-      <div v-else-if="error">{{ error }}</div>
-      <div v-else class="foods">
-        <ul v-if="foods.length > 0">
-          <li v-for="food in foods" :key="food.foodId" class="food">
-            <img
-              :src="getImageUrl(food.picture)"
-              :alt="food.foodName"
-              class="img1"
-              @error="$event.target.src = handleImageError(food)"
-            />
-            <div class="food-info">
-              <div class="food-name">{{ food.foodName }}</div>
-              <div>重量: {{ food.quality }}g</div>
-              <div>卡路里: {{ food.calories }}</div>
-            </div>
-          </li>
-        </ul>
-        <div v-else>暂无推荐食物</div>
+
+    <div v-if="isLoading">正在加载推荐...</div>
+    <div v-else-if="error">{{ error }}</div>
+    <div v-else>
+      <div v-if="foods.length > 0" class="foods">
+        <div v-for="food in foods" :key="food.foodId" class="food">
+          <img
+            :src="getImageUrl(food.picture)"
+            :alt="food.foodName"
+            class="img1"
+            @error="$event.target.src = handleImageError(food)"
+          />
+          <div class="food-info">
+            <div class="food-name">{{ food.foodName }}</div>
+            <div>重量: {{ food.quality }}g</div>
+            <div>卡路里: {{ food.calories }}</div>
+          </div>
+        </div>
       </div>
+      <div v-else>暂无推荐食物</div>
     </div>
   </div>
 </template>
@@ -157,20 +155,15 @@ h2 {
 
 .foods {
   position: absolute;
-  top: 20px;
-  left: -500px;
-  width: 100%;
-  max-width: 600px;
+  top: 200px;
+  left: 740px;
+  width: 937px;
+  display: flex;
 }
 
 .food-info {
   margin-left: 20px;
   flex-grow: 1;
   word-break: break-all;
-}
-
-.lazyLoading {
-  position: absolute;
-  top: 200px;
 }
 </style>
