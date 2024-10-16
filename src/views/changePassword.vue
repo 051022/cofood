@@ -19,7 +19,7 @@ const sendVerificationCode = async () => {
   try {
     const res = await axios({
       method: "post",
-      url: `http://www.femto.fun/verify-email?email=${email.value}&action=1`,
+      url: `https://www.femto.fun/verify-email?email=${email.value}&action=1`,
     });
 
     // 检查请求是否成功
@@ -69,7 +69,7 @@ const loginUser = () => {
 
     // 发送 POST 请求
     axios
-      .post("http://www.femto.fun/password-email", Qs.stringify(data))
+      .post("https://www.femto.fun/password-email", Qs.stringify(data))
       .then((response) => {
         const loginRes = response.data; // 获取响应数据
         if (response.status === 200) {

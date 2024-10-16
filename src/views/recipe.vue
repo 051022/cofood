@@ -44,7 +44,7 @@ updateAtMidnight();
 
 // 发起 Axios 请求
 axios
-  .get("http://www.femto.fun/daily-recommend", {
+  .get("https://www.femto.fun/daily-recommend", {
     params: {
       week_day: weekDay,
     },
@@ -78,7 +78,7 @@ axios
           <div v-if="index === 0">
             <div v-for="food in Array" :key="food.foodName" class="dailyFood">
               <img
-                :src="'http://www.femto.fun/' + food.picture"
+                :src="'https://www.femto.fun/' + food.picture"
                 alt="Food Image"
                 class="foodImg"
               />
@@ -96,7 +96,7 @@ axios
           <div v-if="index === 1">
             <div v-for="food in Array" :key="food.foodName" class="dailyFood">
               <img
-                :src="'http://www.femto.fun/' + food.picture"
+                :src="'https://www.femto.fun/' + food.picture"
                 alt="Food Image"
                 class="foodImg"
               />
@@ -114,7 +114,7 @@ axios
           <div v-if="index === 2">
             <div v-for="food in Array" :key="food.foodName" class="dailyFood">
               <img
-                :src="'http://www.femto.fun/' + food.picture"
+                :src="'https://www.femto.fun/' + food.picture"
                 alt="Food Image"
                 class="foodImg"
               />

@@ -10,7 +10,7 @@ const foods = ref([]);
 
 // 发起 Axios 请求
 axios
-  .get("http://www.femto.fun/food-recommend", {
+  .get("https://www.femto.fun/food-recommend", {
     params: {
       type: 0,
     },
@@ -41,7 +41,7 @@ axios
       <ul>
         <li v-for="food in foods" :key="food.foodName" class="food">
           <img
-            :src="'http://www.femto.fun/' + food.picture"
+            :src="'https://www.femto.fun/' + food.picture"
             alt="Food Image"
             class="img1"
           />

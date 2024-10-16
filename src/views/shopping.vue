@@ -1,22 +1,9 @@
 <script setup>
-import { ref, computed } from "vue";
-
-const slides = ref(["../../image/商品@2x.png", "../../image/商品@2x (1).png"]);
-
-const currentSlideIndex = ref(0);
-
-const currentSlide = computed(() => slides.value[currentSlideIndex.value]);
-
-const prevSlide = () => {
-  currentSlideIndex.value =
-    (currentSlideIndex.value - 1 + slides.value.length) % slides.value.length;
-};
-
-const nextSlide = () => {
-  currentSlideIndex.value = (currentSlideIndex.value + 1) % slides.value.length;
-};
-
-const items = [
+// 导入products组件
+import products from "../components/products.vue";
+import { ref, onMounted } from "vue";
+// 食物种类数组
+const foodList = [
   "主食",
   "奶类制品",
   "蔬菜",
@@ -27,270 +14,280 @@ const items = [
   "豆类坚果",
   "零食饮料",
 ];
-
-const activeIndex = ref(0); // 初始默认第一个是绿色
-const getColor = (index) =>
-  index === activeIndex.value ? "#32db5a" : "#808080";
-const changeColor = (index) => {
-  activeIndex.value = index;
+// 使用ref绑定categoriesContainer类
+const categories = ref(null);
+// 使用ref绑定ulContainer类
+const ulContainer = ref(null);
+// 使用ref绑定轮播图中的img
+const bannerImg = ref(null);
+// 页面进行渲染时, 默认选中categoriesContainer类的第一个子元素高亮
+onMounted(() => {
+  categories.value.children[0].classList.add("active");
+  ulContainer.value.children[0].classList.add("liActive");
+});
+const getFood = (index) => {
+  // console.log(index);
+  const cateList = categories.value.children;
+  for (let index = 0; index < cateList.length; index++) {
+    // console.log(cateList[index]);
+    cateList[index].classList.remove("active");
+  }
+  cateList[index].classList.add("active");
 };
-const changeTab = (index) => {
-  activeIndex.value = index;
+// 记录当前图片的索引
+const index = ref(0);
+const img = ref("../../images/shopping/pic1.png");
+// 存储轮播图图片的数组
+const bannerList = ref([
+  "/src/images/shopping/pic1.png",
+  "/src/images/shopping/pic2.png",
+  "/src/images/shopping/pic3.png",
+]);
+// 点击切换轮播图的方法
+const toPrevImg = () => {
+  index.value--; // 先递减
+  if (index.value < 0) {
+    index.value = bannerList.value.length - 1; // 重置为最后一个元素的索引
+  }
+  bannerImg.value.src = bannerList.value[index.value]; // 更新图片源
+  console.log(bannerImg.value.src); // 打印当前索引值
+  //
+  const ulDotList = ulContainer.value.children;
+  for (let i = 0; i < ulDotList.length; i++) {
+    ulDotList[i].classList.remove("liActive");
+  }
+  ulDotList[index.value].classList.add("liActive");
+};
+
+const toNextImg = () => {
+  index.value++; // 先递增
+  if (index.value >= bannerList.value.length) {
+    // 检查是否超出界限
+    index.value = 0; // 重置为第一个元素的索引
+  }
+  bannerImg.value.src = bannerList.value[index.value]; // 更新图片源
+  console.log(bannerImg.value.src); // 打印当前索引值
+  //
+  const ulDotList = ulContainer.value.children;
+  for (let i = 0; i < ulDotList.length; i++) {
+    ulDotList[i].classList.remove("liActive");
+  }
+  ulDotList[index.value].classList.add("liActive");
 };
 </script>
 
 <template>
-  <div class="container">
-    <Navigation></Navigation>
-    <div class="banner">
-      <div class="recommand">
-        <div class="classification">
-          <ul>
-            <!-- 绑定点击事件，点击时调用 changeTab 方法 -->
-            <li
-              v-for="(item, index) in items"
-              :key="index"
-              @click="changeTab(index)"
-              :style="{ color: getColor(index) }"
-            >
-              {{ item }}
-            </li>
-          </ul>
+  <div class="shoppingContainer">
+    <!-- 顶部导航栏 -->
+    <div class="navContainer">
+      <Navigation></Navigation>
+    </div>
+    <!-- header区域 -->
+    <div class="headerContainer">
+      <div ref="categories" class="categoriesContainer">
+        <div
+          @click="getFood(index)"
+          v-for="(ele, index) in foodList"
+          :key="ele"
+          class="cateItem"
+        >
+          {{ ele }}
         </div>
-        <div class="carousel">
-          <div class="slider-wrapper">
-            <img
-              :src="currentSlide"
-              alt="Slide"
-              style="width: 864px; height: 520px"
-            />
-            <div class="toggle">
-              <button class="prev" @click="prevSlide"></button>
-              <button class="next" @click="nextSlide"></button>
-            </div>
-            <ul class="slider-indicator">
-              <li
-                v-for="(slide, index) in slides"
-                :key="index"
-                :class="{ active: index === currentSlideIndex }"
-              ></li>
-            </ul>
-          </div>
-        </div>
-        <div class="cofoodLogo"></div>
       </div>
-      <div class="title">
-        <div class="smallString"></div>
-        <div class="text">为你推荐</div>
-      </div>
-
-      <div class="product">
-        <!-- 根据 activeIndex 控制显示与隐藏 -->
-        <div v-if="activeIndex === 0" class="item1">
-          <div v-for="product in 6" :key="product">
-            <products></products>
-          </div>
+      <!-- 轮播图区域 -->
+      <div class="bannerContainer">
+        <img ref="bannerImg" src="/src/images/shopping/pic1.png" alt="" />
+        <div @click="toPrevImg" class="prevBtnBox moveBtnBox">
+          <div class="prevBtn"></div>
         </div>
-
-        <div v-if="activeIndex === 1" class="item2">内容2</div>
-        <div v-if="activeIndex === 2" class="item3">内容3</div>
-        <div v-if="activeIndex === 3" class="item4">内容4</div>
-        <div v-if="activeIndex === 4" class="item3">内容5</div>
-        <div v-if="activeIndex === 5" class="item2">内容6</div>
-        <div v-if="activeIndex === 6" class="item1">内容7</div>
-        <div v-if="activeIndex === 7" class="item2">内容8</div>
-        <div v-if="activeIndex === 8" class="item3">内容9</div>
-        <!-- 其他 item 类似 -->
+        <div @click="toNextImg" class="nextBtnBox moveBtnBox">
+          <div class="nextBtn"></div>
+        </div>
+        <ul ref="ulContainer" class="ulContainer">
+          <li v-for="ele in bannerList.length" :key="ele"></li>
+        </ul>
+      </div>
+      <!-- 广告图区域 -->
+      <div class="advertisementContainer">
+        <div class="slogan1"></div>
+        <div class="slogan2"></div>
+      </div>
+    </div>
+    <!-- 推荐区域 -->
+    <div class="introContainer">
+      <!-- 标题区域 -->
+      <div class="titleContainer">
+        为你推荐
+        <div class="decoration"></div>
+        <div class="decoration"></div>
+        <div class="decoration"></div>
+        <div class="decoration"></div>
+      </div>
+      <!-- 内容区域 -->
+      <div class="productContainer">
+        <ProductPage v-for="item in 15" :key="item"></ProductPage>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-body {
-  background: #f4f8fa;
-}
-.container {
-  display: flex;
-  justify-content: center;
-  height: 100vh;
-  margin: 0;
-  position: relative;
-}
-a {
-  text-decoration: none; /* 取消下划线 */
-}
-
-.banner {
-  width: 940px;
-  position: absolute;
-  top: 90px;
-}
-.recommand {
-  width: 940px;
-}
-.classification {
-  width: 120px;
-  height: 400px;
-  background: #ffffff;
-  border-radius: 10px;
-  float: left;
-}
-ul {
-  list-style-type: none;
-  position: absolute;
-  left: -25px;
-  top: -20px;
-}
-.classification li {
-  width: 56px;
-  height: 19px;
-  margin: 24px;
-  color: #808080;
-  font-size: 14px;
-  cursor: pointer;
-  position: relative;
-  left: 30px;
-}
-.carousel {
-  width: 600px;
-  height: 400px;
-  float: left;
-  margin: 0 24px;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-.cofoodLogo {
-  opacity: 86%;
-  width: 172px;
-  height: 400px;
-  float: left;
-  background-image: url("../../image/cofoodLogo.jpg");
-  background-size: contain; /* 设置背景图覆盖整个容器 */
-  background-repeat: no-repeat; /* 禁止背景图片重复 */
-  background-position: center; /* 设置背景图位置居中 */
-}
-.title {
-  position: absolute;
-  top: 480px;
-  left: 420px;
-}
-.title .text {
-  color: #bfbfbf;
-  font-weight: bold;
-  font-size: 24px;
-  float: left;
-}
-.smallString {
-  width: 8px;
-  height: 24px;
-  background: #32db5a;
-  border-radius: 50px;
-  float: left;
-  margin: 7px;
-}
-.product {
-  width: 960px;
-  position: absolute;
-  top: 550px;
-  display: flex;
-  align-content: center;
-  justify-self: center;
-}
-.item1 {
-  width: 960px;
-  display: flex;
-  justify-content: space-around;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.item2 {
-  width: 960px;
-  display: flex;
-  justify-content: space-around;
-}
-.item3 {
-  width: 960px;
-  display: flex;
-  justify-content: space-around;
-}
-.item4 {
-  width: 960px;
-  display: flex;
-  justify-content: space-around;
-}
-.item5 {
-  width: 960px;
-  display: flex;
-  justify-content: space-around;
-}
-
-.slider-wrapper {
-  position: relative; /* 设置为相对定位，以便绝对定位的子元素相对于它进行定位 */
-  width: 600px;
-  height: 400px;
-  background-size: cover; /* 设置背景图覆盖整个容器 */
-  background-repeat: no-repeat; /* 禁止背景图片重复 */
-  background-position: top;
-  overflow: hidden;
-}
-
-.toggle {
-  position: absolute;
-  top: 150px;
-  left: 0;
-  width: 600px;
-  z-index: 1; /* 设置堆叠顺序，确保在上方显示 */
-}
-
-.slider-indicator {
-  position: absolute;
-  top: 350px;
-  left: 30px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  align-items: center;
-}
-
-.slider-indicator li {
-  width: 8px;
-  height: 8px;
-  margin: 4px;
-  border-radius: 50%;
-  background-color: #fff;
-  opacity: 0.4;
-  cursor: pointer;
-}
-
-.slider-indicator li.active {
-  width: 12px;
-  height: 12px;
-  opacity: 1;
-}
-
-.slider-wrapper img {
-  float: left;
-}
-
-.toggle button {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background-size: contain; /* 设置背景图覆盖整个容器 */
-  background-repeat: no-repeat; /* 禁止背景图片重复 */
-  background-position: center; /* 设置背景图位置居中 */
-  border-style: none;
-}
-.prev {
-  margin-left: 20px;
-  background-image: url("../../image/向左箭头.svg");
-  float: left;
-}
-.next {
-  margin-right: 10px;
-  background-image: url("../../image/向右箭头.svg");
-  float: right;
+<style lang="less" scoped>
+.shoppingContainer {
+  margin: 0 auto;
+  width: 1440px;
+  .navContainer {
+    margin-bottom: 30px;
+  }
+  .headerContainer {
+    display: flex;
+    width: 940px;
+    margin: 0 auto;
+    .categoriesContainer {
+      margin-right: 24px;
+      padding: 7px 0px 6px 34px;
+      width: 120px;
+      height: 400px;
+      border-radius: 10px;
+      background-color: #fff;
+      box-sizing: border-box;
+      .cateItem {
+        padding: 12px 0px;
+        color: #808080;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .active {
+        color: #32db5a;
+        font-weight: 700;
+      }
+    }
+    .bannerContainer {
+      margin-right: 24px;
+      position: relative;
+      width: 600px;
+      height: 400px;
+      img {
+        width: 100%;
+        height: 100%;
+      }
+      .moveBtnBox {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 170px;
+        width: 60px;
+        height: 60px;
+        background-color: #141212;
+        opacity: 20%;
+        cursor: pointer;
+      }
+      .prevBtnBox {
+        left: 0;
+        .prevBtn {
+          width: 32px;
+          height: 32px;
+          background-image: url(../images/shopping/arrowLeft.png);
+          background-size: 32px 32px;
+        }
+      }
+      .nextBtnBox {
+        right: 0;
+        .nextBtn {
+          width: 32px;
+          height: 32px;
+          background-image: url(../images/shopping/arrowRight.png);
+          background-size: 32px 32px;
+          opacity: 100%;
+        }
+      }
+      .ulContainer {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        list-style: none;
+        position: absolute;
+        left: 17px;
+        bottom: 14px;
+        li {
+          margin-right: 6px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: #ffffff;
+          opacity: 30%;
+        }
+        .liActive {
+          background-color: #32db5a;
+          opacity: 100%;
+        }
+      }
+    }
+    .advertisementContainer {
+      position: relative;
+      height: 400px;
+      width: 172px;
+      background-image: url(../images/shopping/pic4.png);
+      background-size: 172px 400px;
+      .slogan1 {
+        position: absolute;
+        top: 148px;
+        left: 12px;
+        width: 46px;
+        height: 140px;
+        background-image: url(../images/shopping/pic5.png);
+        background-size: 46px 140px;
+      }
+      .slogan2 {
+        position: absolute;
+        top: 244px;
+        left: 58px;
+        width: 46px;
+        height: 140px;
+        background-image: url(../images/shopping/pic6.png);
+        background-size: 46px 140px;
+      }
+    }
+  }
+  .introContainer {
+    margin: 60px auto;
+    width: 940px;
+    .titleContainer {
+      position: relative;
+      margin: 0 auto;
+      text-align: center;
+      color: #bfbfbf;
+      font-size: 24px;
+      font-weight: 700;
+      .decoration {
+        position: absolute;
+        width: 8px;
+        height: 24px;
+        background-image: url(../images/shopping/pic7.png);
+        background-size: 8px 24px;
+        &:nth-child(1) {
+          left: 384px;
+          top: 5px;
+        }
+        &:nth-child(2) {
+          left: 400px;
+          top: -3px;
+        }
+        &:nth-child(3) {
+          left: 532px;
+          bottom: -3px;
+        }
+        &:nth-child(4) {
+          left: 548px;
+          top: 5px;
+        }
+      }
+    }
+    .productContainer {
+      margin-top: 27px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+  }
 }
 </style>

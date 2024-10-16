@@ -69,7 +69,8 @@
             :item="item"
             :is-selected="item.isSelected"
             @remove="removeItem(index)"
-            @updateSelection="updateItemSelection(index, $event)"
+            @update:is-selected="updateItemSelection(index, $event)"
+            @update:quantity="updateItemQuantity(index, $event)"
           ></shoppingCartItem>
         </div>
       </div>
@@ -105,14 +106,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import shoppingCartItem from "../components/shoppingCartItem.vue";
+import { useStore } from "vuex";
+
+const store = useStore();
 
 const cartItems = ref([
   { name: "商品1", price: 30, quantity: 1, isSelected: false },
   { name: "商品2", price: 30, quantity: 1, isSelected: false },
   { name: "商品3", price: 30, quantity: 1, isSelected: false },
-  // 其他购物车项...
 ]);
 
 const value = ref("");
@@ -143,7 +146,6 @@ const options = ref([
       { value: "xicheng", label: "西城区" },
     ],
   },
-  // 更多选项...
 ]);
 
 const cascaderProps = {
@@ -153,13 +155,11 @@ const cascaderProps = {
 };
 
 const filteredOptions = computed(() => {
-  // 可以在这里添加动态过滤逻辑
   return options.value;
 });
 
 const isAllSelected = ref(false);
 
-//全选框逻辑
 const toggleAllSelection = () => {
   cartItems.value.forEach((item) => {
     item.isSelected = isAllSelected.value;
@@ -171,17 +171,23 @@ const updateItemSelection = (index, isSelected) => {
   updateAllSelectedState();
 };
 
+const updateItemQuantity = (index, quantity) => {
+  cartItems.value[index].quantity = quantity;
+};
+
 const updateAllSelectedState = () => {
   isAllSelected.value = cartItems.value.every((item) => item.isSelected);
 };
 
 const removeItem = (index) => {
   cartItems.value.splice(index, 1);
+  updateAllSelectedState();
 };
 
 const clearCart = () => {
   if (confirm("确定清空购物车吗？")) {
     cartItems.value = [];
+    updateAllSelectedState();
   }
 };
 
@@ -198,8 +204,19 @@ const totalPrice = computed(() => {
 const checkout = () => {
   alert(`去结算，金额为：${totalPrice.value}元`);
 };
-</script>
 
+// 监听 cartItems 的变化
+watch(
+  cartItems,
+  () => {
+    updateAllSelectedState();
+  },
+  { deep: true }
+);
+
+// 初始化时更新全选状态
+updateAllSelectedState();
+</script>
 
 <style>
 body {
@@ -291,4 +308,4 @@ body {
   top: -30px;
   align-items: center;
 }
-</style>我的shoppingCartItem中的img的路径不想写死，而是从后端获取
+</style>

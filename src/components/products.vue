@@ -1,184 +1,84 @@
-<template>
-  <div class="productInformation">
-    <div class="productImg">暂无数据</div>
-    <div class="productPrice">
-      <p>价格：30元</p>
-    </div>
-    <div class="bottom-right">
-      <div class="counter">
-        <button class="counter-btn" @click="decrement">-</button>
-        <span>{{ count }}</span>
-        <button class="counter-btn" @click="increment">+</button>
-      </div>
-      <div class="icons">
-        <div
-          class="icon favorite"
-          @click="toggleFavorite"
-          :style="{
-            backgroundImage: `url(${
-              isFavorite ? '../../image/标星-fill.png' : '../../image/标星.png'
-            })`,
-          }"
-        ></div>
+<script setup>
+import { defineProps } from "vue";
+const prop = defineProps(["isPrice"]);
+</script>
 
-        <div
-          class="icon cart"
-          @click="addToCart"
-          :style="{
-            backgroundImage: `url(${
-              isCart ? '../../image/购物车-fill.svg' : '../../image/购物车.svg'
-            })`,
-          }"
-        ></div>
+<template>
+  <div class="foodItem">
+    <!-- 食物封面 -->
+    <div class="foodImage">
+      <img src="../images/pic6.png" alt="" />
+    </div>
+    <!-- 食品价格 -->
+    <div v-if="isPrice" class="foodPrice">
+      <span class="foodName">白米饭</span>
+      <span class="price">209</span>千卡/份
+    </div>
+    <!-- 食品销量 -->
+    <div v-else class="foodSale">
+      <div class="foodsName">鸡胸肉</div>
+      <div class="foodsDetails">
+        <span class="price">¥39.9</span>
+        <span class="sale">已售 100件</span>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
+<style lang="less" scoped>
+.foodItem {
+  margin-bottom: 10px;
+  margin-right: 8px;
+  width: 180px;
 
-const count = ref(0);
-const increment = () => {
-  count.value += 1;
-};
-const decrement = () => {
-  if (count.value > 0) {
-    count.value -= 1;
+  &:nth-child(5n) {
+    margin-right: 0px;
   }
-};
-
-const isFavorite = ref(false);
-const toggleFavorite = () => {
-  //判断token是否存在
-  const token = store.getters.token;
-  if (!token) {
-    //弹确认框
-    ElMessageBox.confirm("温馨提示：需要先登录才可以加入收藏哦", "Warning", {
-      confirmButtonText: "登录",
-      cancelButtonText: "再看看",
-    })
-      .then(() => {
-        //跳转登录页面
-      })
-      .catch(() => {
-        ElMessage({
-          message: "未登录",
-        });
-      });
-  } else {
-    isFavorite.value = !isFavorite.value;
-    if (isFavorite.value === false) alert("已取消收藏");
-    else alert("已收藏");
+  .foodImage {
+    width: 180px;
+    height: 180px;
+    img {
+      width: 100%;
+      height: 100%;
+    }
   }
-};
-
-const isCart = ref(false);
-const addToCart = () => {
-  //判断token是否存在
-  const token = store.getters.token;
-  if (!token) {
-    //弹确认框
-    ElMessageBox.confirm("温馨提示：需要先登录才可以加入购物车哦", "Warning", {
-      confirmButtonText: "登录",
-      cancelButtonText: "再看看",
-    })
-      .then(() => {
-        //跳转登录页面
-      })
-      .catch(() => {
-        ElMessage({
-          message: "未登录",
-        });
-      });
-  } else {
-    alert("商品已经加入购物车");
-    isCart.value = 1;
+  .foodPrice {
+    padding-left: 16px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 12px;
+    border: 1px dotted #707070;
+    .foodName {
+      margin-right: 34px;
+      font-size: 16px;
+    }
+    .price {
+      font-weight: 700;
+      color: red;
+    }
   }
-};
-</script>
-
-
-<style>
-.productInformation {
-  width: 300px;
-  height: 405px;
-  margin: 10px 5px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  position: relative; /* 为了正确定位右下角的元素 */
-}
-.productInformation:hover {
-  border: 2px solid #32db5a;
-}
-
-.productImg {
-  width: 300px;
-  height: 300px;
-  background-color: #bfbfbf;
-}
-
-.productPrice {
-  padding: 10px;
-  width: 280px;
-  height: 85px;
-}
-
-/* 右下角的布局 */
-.bottom-right {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.counter {
-  display: flex;
-  align-items: center;
-}
-
-.counter-btn {
-  background-color: #bfbfbf;
-  border: none;
-  color: white;
-  font-size: 18px;
-  width: 30px;
-  height: 30px;
-  text-align: center;
-  cursor: pointer;
-  margin: 5px;
-}
-
-.icons {
-  display: flex;
-  margin-top: 10px;
-}
-
-.icon {
-  width: 24px;
-  height: 24px;
-  margin: 0 5px;
-  cursor: pointer;
-  background-size: cover;
-}
-
-.icon.favorite {
-  background-image: url("../../image/标星.png");
-}
-
-.icon.cart {
-  background-image: url("../../image/购物车.svg");
-}
-
-.icon-favorite {
-  background-image: url("../../image/标星-fill.png");
-}
-.icon-cart {
-  background-image: url("../../image/购物车-fill.svg");
+  .foodSale {
+    padding: 9px 11px 6px 10px;
+    height: 54px;
+    box-sizing: border-box;
+    border: 1px dotted #707070;
+    .foodsName {
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .foodsDetails {
+      display: flex;
+      justify-content: space-between;
+      .price {
+        font-size: 14px;
+        font-weight: 700;
+        color: #f53636;
+      }
+      .sale {
+        font-size: 10px;
+        color: #bfbfbf;
+      }
+    }
+  }
 }
 </style>

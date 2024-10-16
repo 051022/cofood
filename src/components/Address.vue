@@ -1,35 +1,38 @@
 <template>
-  <div class="informations">
-    <el-descriptions :column="1">
-      <el-descriptions-item label="收货人:">{{
-        formData.recipient
-      }}</el-descriptions-item>
-      <el-descriptions-item label="所在地区:">{{
-        formData.region
-      }}</el-descriptions-item>
-      <el-descriptions-item label="地址:">{{
-        formData.address
-      }}</el-descriptions-item>
-      <el-descriptions-item label="标签:"
-        ><el-tag size="small">{{ formData.tag }}</el-tag></el-descriptions-item
-      >
-      <el-descriptions-item label="手机:">{{
-        formData.phone
-      }}</el-descriptions-item>
-      <el-descriptions-item label="固定电话:">{{
-        formData.stickPhone
-      }}</el-descriptions-item>
-      <el-descriptions-item label="电子邮箱:">{{
-        formData.email
-      }}</el-descriptions-item>
-    </el-descriptions>
+  <div>
+    <div v-if="addresses.length === 0">暂无地址信息</div>
+    <div
+      v-else
+      v-for="address in addresses"
+      :key="address.ID"
+      class="informations"
+    >
+      <el-descriptions :column="1">
+        <el-descriptions-item label="收货人:">{{
+          address.name
+        }}</el-descriptions-item>
+        <el-descriptions-item label="所在地区:">{{
+          address.area
+        }}</el-descriptions-item>
+        <el-descriptions-item label="地址:">{{
+          address.address
+        }}</el-descriptions-item>
+        <el-descriptions-item label="手机:">{{
+          address.phone
+        }}</el-descriptions-item>
+      </el-descriptions>
 
-    <div class="bottom-buttons">
-      <el-button class="el-button" @click="handleSetDefault"
-        >设为默认</el-button
-      >
-      <el-button class="el-button" @click="handleEdit">编辑</el-button>
-      <el-button class="el-button close-btn" @click="handleClose">×</el-button>
+      <div class="bottom-buttons">
+        <el-button class="el-button" @click="handleSetDefault(address.ID)"
+          >设为默认</el-button
+        >
+        <el-button class="el-button" @click="handleEdit(address)"
+          >编辑</el-button
+        >
+        <el-button class="el-button close-btn" @click="handleDelete(address.ID)"
+          >×</el-button
+        >
+      </div>
     </div>
 
     <!-- 编辑表单 -->
@@ -41,10 +44,10 @@
     >
       <el-form :model="editData">
         <el-form-item label="收货人:">
-          <el-input v-model="editData.recipient"></el-input>
+          <el-input v-model="editData.name"></el-input>
         </el-form-item>
         <el-form-item label="所在地区:">
-          <el-input v-model="editData.region"></el-input>
+          <el-input v-model="editData.area"></el-input>
         </el-form-item>
         <el-form-item label="地址:">
           <el-input v-model="editData.address"></el-input>
@@ -55,9 +58,9 @@
         <el-form-item label="手机:">
           <el-input v-model="editData.phone"></el-input>
         </el-form-item>
-        <el-form-item label="固定电话:">
+        <!-- <el-form-item label="固定电话:">
           <el-input v-model="editData.stickPhone"></el-input>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="电子邮箱:">
           <el-input v-model="editData.email"></el-input>
         </el-form-item>
@@ -72,111 +75,221 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 新增地址对话框 -->
+    <el-dialog
+      title="新增收货地址"
+      v-model="addDialogVisible"
+      @close="handleAddDialogClose"
+    >
+      <el-form :model="newAddress" label-width="120px">
+        <el-form-item label="收货人:">
+          <el-input v-model="newAddress.name"></el-input>
+        </el-form-item>
+        <el-form-item label="所在地区:">
+          <el-input v-model="newAddress.area"></el-input>
+        </el-form-item>
+        <el-form-item label="详细地址:">
+          <el-input v-model="newAddress.address"></el-input>
+        </el-form-item>
+        <el-form-item label="标签:">
+          <el-input v-model="newAddress.tag"></el-input>
+        </el-form-item>
+        <el-form-item label="手机:">
+          <el-input v-model="newAddress.phone"></el-input>
+        </el-form-item>
+        <!-- <el-form-item label="固定电话:">
+          <el-input v-model="newAddress.stickPhone"></el-input>
+        </el-form-item> -->
+        <el-form-item label="电子邮箱:">
+          <el-input v-model="newAddress.email"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="addDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleAddAddress">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useStore } from "vuex";
-import { onMounted } from "vue";
+import { useRouter } from "vue-router";
 
-// 使用useStore钩子来获取store实例
 const store = useStore();
+const router = useRouter();
+const emit = defineEmits(["address-added"]);
 
-// 使用ref来创建一个响应式的token变量
-const token = ref(store.getters.token);
-
-// 检查token是否存在
-if (!token.value) {
-  console.error("Token not found!");
-}
-
+const token = computed(() => store.getters.token);
+const addresses = ref([]);
 const dialogVisible = ref(false);
-const formData = ref({
-  recipient: "",
-  region: "",
+const addDialogVisible = ref(false);
+const editData = ref({});
+const newAddress = ref({
+  name: "",
+  area: "",
   address: "",
   tag: "",
   phone: "",
   stickPhone: "",
+  email: "",
 });
-const editData = ref({ ...formData.value }); // 初始时复制formData
-
-function fetchData() {
-  axios
-    .get("http://127.0.0.1:4523/m1/4260973-0-default/address", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((response) => {
-      formData.value = response.data; // 确保后端返回的数据结构与formData匹配
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-    });
-}
-
-function handleSave() {
-  axios
-    .post(
-      "http://127.0.0.1:4523/m1/4260973-0-default/address",
-      editData.value,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-    .then((response) => {
-      formData.value = { ...editData.value }; // 更新formData
-      dialogVisible.value = false; // 关闭对话框
-      console.log("数据上传成功", response.data);
-    })
-    .catch((error) => {
-      console.error("Error saving data:", error);
-    });
-}
-function handleClose() {
-  console.log("关闭按钮点击");
-}
-
-function handleSetDefault() {
-  console.log("设为默认按钮点击");
-}
-
-function handleEdit() {
-  editData.value = { ...formData.value };
-  dialogVisible.value = true;
-}
-
-function handleDialogClose() {
-  dialogVisible.value = false;
-}
 
 onMounted(() => {
   fetchData();
 });
-</script>  
-  
+
+const showAddDialog = () => {
+  addDialogVisible.value = true;
+};
+
+const handleAddAddress = async () => {
+  try {
+    const formData = new FormData();
+    for (const key in newAddress.value) {
+      if (newAddress.value[key]) {
+        formData.append(key, newAddress.value[key]);
+      }
+    }
+
+    const response = await axios.post(
+      "https://www.femto.fun/address",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("地址添加成功", response.data);
+    addDialogVisible.value = false;
+    emit("address-added");
+    await fetchData(); // 重新获取所有地址
+  } catch (error) {
+    console.error("添加地址失败:", error);
+  }
+};
+
+const handleAddDialogClose = () => {
+  newAddress.value = {
+    name: "",
+    area: "",
+    address: "",
+    tag: "",
+    phone: "",
+    stickPhone: "",
+    email: "",
+  };
+};
+
+const fetchData = async () => {
+  try {
+    const response = await axios.get("https://www.femto.fun/address", {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+    console.log("API 响应:", response.data);
+    if (response.data.code === 200 && Array.isArray(response.data.addresses)) {
+      addresses.value = response.data.addresses;
+    } else {
+      addresses.value = [];
+    }
+    console.log("获取到的地址:", addresses.value);
+  } catch (error) {
+    console.error("获取地址列表失败:", error);
+    if (error.response && error.response.status === 401) {
+      router.push("/login");
+    }
+  }
+};
+
+const handleSave = async () => {
+  try {
+    const formData = new FormData();
+    for (const key in editData.value) {
+      if (editData.value[key] !== null && editData.value[key] !== undefined) {
+        formData.append(key, editData.value[key]);
+      }
+    }
+
+    // 只有在修改现有地址时才包含 ID
+    if (editData.value.ID) {
+      formData.append("id", editData.value.ID);
+    }
+
+    const response = await axios.post(
+      "https://www.femto.fun/address",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("地址更新成功", response.data);
+    dialogVisible.value = false;
+    await fetchData(); // 重新获取所有地址
+  } catch (error) {
+    console.error("更新地址失败:", error);
+  }
+};
+
+const handleSetDefault = (id) => {
+  console.log("设为默认按钮点击", id);
+};
+
+const handleEdit = (address) => {
+  editData.value = { ...address };
+  dialogVisible.value = true;
+};
+
+const handleDialogClose = () => {
+  dialogVisible.value = false;
+};
+
+const handleDelete = async (id) => {
+  try {
+    await axios.delete(`https://www.femto.fun/address?id=${id}`, {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+    console.log("地址删除成功");
+    fetchData();
+  } catch (error) {
+    console.error("删除地址失败:", error);
+  }
+};
+
+defineExpose({
+  showAddDialog,
+  fetchData, // 暴露 fetchData 方法
+});
+</script>
 
 <style scoped>
 .informations {
-  position: relative; /* 使绝对定位的按钮相对于此容器定位 */
   width: 774px;
-  height: 300px;
+  height: 180px;
   background: #ffffff;
   border: 1px solid #707070;
   border-radius: 10px;
   padding: 10px;
   margin: 10px;
+  position: relative;
 }
 
-/* 右上角关闭按钮样式 */
 .close-btn {
   position: absolute;
-  top: -260px;
+  top: -360px;
   right: 10px;
   border: none;
   color: #707070;
@@ -187,17 +300,15 @@ onMounted(() => {
   background-color: #ffffff;
 }
 
-/* 右下角按钮区域 */
 .bottom-buttons {
   position: absolute;
   bottom: 10px;
   right: 10px;
   display: flex;
-  gap: 10px; /* 按钮之间的间距 */
+  gap: 10px;
 }
 
-/* 按钮样式调整 */
 .el-button {
-  margin: 0; /* 去掉默认的外边距 */
+  margin: 0;
 }
 </style>

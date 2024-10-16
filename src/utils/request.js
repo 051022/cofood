@@ -6,8 +6,8 @@ import { Toast } from 'vant'
 // 创建 axios 实例，将来对创建出来的实例，进行自定义配置
 // 好处：不会污染原始的 axios 实例
 const instance = axios.create({
-    baseURL: ' http://localhost:5173/',
-    timeout: 5000
+    baseURL: ' https://localhost:5185/',
+    timeout: 1000
 })
 
 // 自定义配置 - 请求/响应 拦截器

@@ -1,22 +1,30 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
+import {
+  getNotes,
+  addNote as addNoteAPI,
+  deleteNote as deleteNoteAPI,
+  // 删除 getNote 的导入
+} from "../api/comment";
+import axios from "axios";
 
-//点赞，点击点赞数+1，图标改变，再次点击点赞数-1，图标恢复
+const store = useStore();
+
+// 点赞，点击点赞数+1，图标改变，再次点击点赞数-1，图标恢复
 const countUpvote = ref(5888);
-//初始为假
 let upvoted = false;
 
 const changeUpvote = () => {
   if (!upvoted) {
     countUpvote.value++;
-    // 点击一次后为真
     upvoted = true;
   } else {
     countUpvote.value--;
-    //再点击为假
     upvoted = false;
   }
 };
+
 // 收藏，同上
 const countCollect = ref(1588);
 let collected = false;
@@ -30,30 +38,312 @@ const changeCollect = () => {
     collected = false;
   }
 };
-//评论，待补充
+
+// 评论，待补充
 const countComment = ref(4484);
 
-//发布动态
-const newComment = ref("");
-const comments = ref([]);
+// 发布动态
+const newNote = ref({
+  title: "",
+  content: "",
+  images: [],
+});
 
-//点击addComment按钮触发函数
-const addComment = () => {
-  // .trim() 用于移除 newComment.value 字符串两端的空白字符，
-  // 然后检查结果是否等于空字符串 ""。
-  if (newComment.value.trim() === "") {
-    alert("评论内容不能为空");
+// 添加这个新的 ref 来存储所有笔记
+const allNotes = ref([]);
+
+// 使用计算属性从 Vuex store 获取 token
+const token = computed(() => store.getters.token);
+
+const previewImages = ref([]);
+
+const handleImageUpload = (event) => {
+  const files = event.target.files;
+  if (files.length + newNote.value.images.length > 9) {
+    alert("最多只能上传9张图片");
     return;
   }
-  // 向名为 comments 的数组或类数组对象中添加一个新的对象。
-  // 这个新对象有一个键为 text 的属性，其值为 newComment.value。
-  comments.value.push({ text: newComment.value });
-  newComment.value = ""; // 清空输入框
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    newNote.value.images.push(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImages.value.push(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
 };
 
-const deleteComment = (index) => {
-  comments.value.splice(index, 1);
+const removeImage = (index) => {
+  newNote.value.images.splice(index, 1);
+  previewImages.value.splice(index, 1);
 };
+
+// 获取笔记列表
+onMounted(async () => {
+  try {
+    const response = await getNotes();
+    allNotes.value = response.data.notes.map((note) => ({
+      ...note,
+      upvoteCount: note.upvoteCount || 0,
+      collectCount: note.collectCount || 0,
+      commentCount: note.commentCount || 0,
+      upvoted: false,
+      collected: false,
+      isOwnNote: note.UserID === store.state.user.userInfo.id,
+    }));
+    console.log(allNotes.value);
+  } catch (error) {
+    console.error("获取笔记失败:", error);
+  }
+});
+
+// 添加这些计算属性来获取用户信息
+const username = computed(() => store.state.user.userInfo.username || "用户");
+const userAvatar = computed(() => {
+  const avatar = store.state.user.userInfo.avatar;
+  if (avatar && avatar.startsWith("http")) {
+    return avatar;
+  } else if (avatar) {
+    return `https://www.femto.fun${avatar}`;
+  } else {
+    return "../../image/头像@2x.png";
+  }
+});
+
+// 修改 addNewNote 函数
+const addNewNote = async () => {
+  if (!token.value) {
+    console.error("没有找到token, 请先登");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("title", newNote.value.title);
+    formData.append("content", newNote.value.content);
+
+    newNote.value.images.forEach((image) => {
+      formData.append(`image`, image);
+    });
+
+    const response = await addNoteAPI(formData, token.value);
+
+    console.log("Response:", response.data);
+
+    const newNoteData = {
+      NoteID: response.data.NoteID,
+      UserID: store.state.user.userInfo.id,
+      Title: newNote.value.title,
+      Content: newNote.value.content,
+      CreatedAt: new Date().toISOString(),
+      UpdatedAt: new Date().toISOString(),
+      NotesImages: response.data.NotesImages.map((image) => ({
+        ImageID: image.ImageID,
+        NoteID: response.data.NoteID,
+        URL: image.URL,
+        CreatedAt: new Date().toISOString(),
+        UpdatedAt: new Date().toISOString(),
+      })),
+      upvoteCount: 0,
+      collectCount: 0,
+      commentCount: 0,
+      upvoted: false,
+      collected: false,
+      isOwnNote: true,
+    };
+
+    allNotes.value.unshift(newNoteData);
+    newNote.value = { title: "", content: "", images: [] };
+    previewImages.value = [];
+    console.log("上传成功");
+  } catch (error) {
+    console.error(
+      "添加笔记失败:",
+      error.response ? error.response.data : error.message
+    );
+  }
+};
+
+// 删除笔记
+const handleDeleteNote = async (noteId) => {
+  try {
+    await deleteNoteAPI(noteId);
+    allNotes.value = allNotes.value.filter((note) => note.NoteID !== noteId);
+  } catch (error) {
+    console.error("删除笔记失败:", error);
+  }
+};
+
+// 评论相关的状态
+const activeCommentNoteId = ref(null);
+const comments = ref({});
+const newCommentContent = ref("");
+
+// 二级评论相关的状态
+const newSubCommentContent = ref({});
+const activeSubCommentId = ref(null);
+
+// 修改 sendComment 函数
+const sendComment = async (noteId) => {
+  try {
+    console.log("正在发送评论，noteId:", noteId);
+
+    const formData = new FormData();
+    formData.append("note_id", String(noteId));
+    formData.append("content", newCommentContent.value);
+
+    const response = await axios.post(
+      "https://www.femto.fun/comment",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("发送评论成功，服务器响应:", response.data);
+    newCommentContent.value = "";
+    if (!comments.value[noteId]) {
+      comments.value[noteId] = [];
+    }
+    const newComment = {
+      ...response.data,
+      User: {
+        userName: username,
+        avatar: userAvatar,
+      },
+    };
+    comments.value[noteId].unshift(newComment);
+    const noteIndex = allNotes.value.findIndex(
+      (note) => note.NoteID === noteId
+    );
+    if (noteIndex !== -1) {
+      allNotes.value[noteIndex].commentCount++;
+    }
+    // 不需要重新获取评论，因为我们已经添加了新评论
+    await fetchComments(noteId);
+  } catch (error) {
+    console.error("发送评论失败:", error);
+    console.error(
+      "错误详情:",
+      error.response ? error.response.data : error.message
+    );
+  }
+};
+
+// 发送二级评论的函数
+const sendSubComment = async (commentId) => {
+  try {
+    console.log("正在发送二级评论，commentId:", commentId);
+
+    // 创建 FormData 对象
+    const sub_formData = new FormData();
+    sub_formData.append("comment_id", String(commentId)); // 确保 commentId 是字符串
+    sub_formData.append("content", newSubCommentContent.value[commentId]);
+
+    const response = await axios.post(
+      "https://www.femto.fun/sub_comment",
+      sub_formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("发送二级评论成功，服务器响应:", response.data);
+    newSubCommentContent.value[commentId] = "";
+    // 重新获取评论列表以包含新的二级评论
+    await fetchComments(activeCommentNoteId.value);
+  } catch (error) {
+    console.error("发送二级评论失败:", error);
+    console.error(
+      "错误详情:",
+      error.response ? error.response.data : error.message
+    );
+  }
+};
+
+// 获取评论的函数
+const fetchComments = async (noteId) => {
+  try {
+    console.log("获取评论，noteId:", noteId); // 添加日志
+    const response = await axios.get(
+      `https://www.femto.fun/comment?note_id=${noteId}`,
+      {
+        headers: { Authorization: `Bearer ${token.value}` },
+      }
+    );
+    console.log("获取评论成功，服务器响应:", response.data); // 添加日志
+    comments.value[noteId] = response.data.data || [];
+  } catch (error) {
+    console.error("获取评论失败:", error);
+    console.error(
+      "错误详情:",
+      error.response ? error.response.data : error.message
+    ); // 添加详细错误日志
+    comments.value[noteId] = [];
+  }
+};
+
+// 添加评论功能函数
+const likeComment = async (commentId) => {
+  // 实现点赞逻辑
+};
+
+const collectComment = async (commentId) => {
+  // 实现收藏逻辑
+};
+
+const toggleSubCommentForm = (commentId) => {
+  activeSubCommentId.value =
+    activeSubCommentId.value === commentId ? null : commentId;
+};
+
+// 删除评论
+const deleteComment = async (commentId) => {
+  try {
+    await axios.delete(`https://www.femto.fun/comment?id=${commentId}`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+    fetchComments(activeCommentNoteId.value);
+  } catch (error) {
+    console.error("删除评论失败:", error);
+  }
+};
+
+// 添加 toggleComments 函数
+const toggleComments = async (noteId) => {
+  if (activeCommentNoteId.value === noteId) {
+    activeCommentNoteId.value = null;
+  } else {
+    activeCommentNoteId.value = noteId;
+    if (!comments.value[noteId]) {
+      await fetchComments(noteId);
+    }
+  }
+};
+
+// 添加日期格式化函数
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleString(); // 或者使用更复杂的格式化逻辑
+};
+
+// 添加获取完整图片 URL 的函数
+const getFullImageUrl = (url) => {
+  if (!url) return "../../image/default-image.png"; // 默认图片
+  if (url.startsWith("http")) {
+    return url;
+  }
+  return `https://www.femto.fun${url}`;
+};
+
+// 删除 fetchSingleNote 函数
 </script>
 
 <template>
@@ -61,99 +351,191 @@ const deleteComment = (index) => {
     <Navigation></Navigation>
 
     <div class="banner">
-      <div class="comment">
-        <div class="headPortrait"></div>
-        <div class="information">
-          <div class="name">火龙果十级爱好者</div>
-          <div class="time">2小时前</div>
-        </div>
-        <div class="attention">
-          <div class="symbolPlus"></div>
-          <div class="attentionText"></div>
-        </div>
-        <div class="blank"></div>
-        <div class="content">
-          #健身打卡day15
-          <br />
-          今天也是女大坚持健康饮食作息的一天！
-          <br />
-          早餐：豆浆+三明治+小番茄(多吃水果补充维C!)
-          <br />
-          午餐：（外卖了一份轻食）紫薯+水煮西兰花+烟熏 鸭胸肉
-          <br />
-          晚餐：杂粮饭+白灼生菜+炒蘑菇+饭后来点橙子继续 补充维C
-        </div>
-        <div class="commentImgs">
-          <div class="Img1"></div>
-        </div>
-        <div class="function">
-          <div class="upvote">
-            <div
-              class="smallImg1"
-              :class="{ redHeart: upvoted }"
-              @click="changeUpvote"
-            ></div>
-            <div class="data">{{ countUpvote }}</div>
-          </div>
-          <div class="collect">
-            <div
-              class="smallImg2"
-              :class="{ yellowStar: collected }"
-              @click="changeCollect"
-            ></div>
-            <div class="data">{{ countCollect }}</div>
-          </div>
-          <div class="addComment">
-            <div class="smallImg3"></div>
-            <div class="data">4484</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="personnal">
-        <div class="headPortrait"></div>
-        <div class="information">
-          <div class="name">一颗奇异果</div>
-          <div class="identity">暂无身份</div>
-        </div>
-        <textarea
-          class="content"
-          v-model="newComment"
-          placeholder="发布一条动态"
-        ></textarea>
-        <button @click="addComment">发布动态</button>
-      </div>
-
-      <div class="newComments">
-        <div v-for="(comment, index) in comments" :key="index" class="comment1">
-          <div class="headPortrait hp1"></div>
+      <div class="note-list">
+        <div v-for="note in allNotes" :key="note.NoteID" class="note">
+          <div
+            :class="['headPortrait', { 'own-avatar': note.isOwnNote }]"
+            :style="
+              note.isOwnNote ? { backgroundImage: `url(${userAvatar})` } : {}
+            "
+          ></div>
           <div class="information">
-            <div class="name">一颗奇异果</div>
-            <div class="time">刚刚</div>
+            <!-- <div class="name">{{ note.UserID }}</div> -->
+            <div class="name">ntseil</div>
+            <div class="time">{{ formatDate(note.CreatedAt) }}</div>
           </div>
           <div class="attention">
             <div class="symbolPlus"></div>
             <div class="attentionText"></div>
           </div>
           <div class="blank"></div>
-          <p>{{ comment.text }}</p>
-
-          <div class="function1">
-            <div class="upvote">
-              <div class="smallImg1"></div>
-              <div class="data">0</div>
-            </div>
-            <div class="collect">
-              <div class="smallImg2"></div>
-              <div class="data">0</div>
-            </div>
-            <div class="addComment">
-              <div class="smallImg3"></div>
-              <div class="data">0</div>
+          <div class="content">
+            <h3 v-if="note.Title" class="note-title">{{ note.Title }}</h3>
+            <p class="note-content">{{ note.Content }}</p>
+            <div
+              class="note-images"
+              v-if="note.NotesImages && note.NotesImages.length"
+            >
+              <img
+                v-for="image in note.NotesImages"
+                :key="image.ImageID"
+                :src="getFullImageUrl(image.URL)"
+                :alt="note.Title || 'Note image'"
+                class="note-image"
+              />
             </div>
           </div>
-          <span class="delete-btn" @click="deleteComment(index)">删除</span>
+          <div class="function">
+            <div class="upvote">
+              <div
+                class="smallImg1"
+                :class="{ redHeart: note.upvoted }"
+                @click="changeUpvote(note)"
+              ></div>
+              <div class="data">{{ note.upvoteCount }}</div>
+            </div>
+            <div class="collect">
+              <div
+                class="smallImg2"
+                :class="{ yellowStar: note.collected }"
+                @click="changeCollect(note)"
+              ></div>
+              <div class="data">{{ note.collectCount }}</div>
+            </div>
+            <div class="addComment" @click="toggleComments(note.NoteID)">
+              <div class="smallImg3"></div>
+              <div class="data">{{ note.commentCount }}</div>
+            </div>
+          </div>
+
+          <!-- 评论区 -->
+          <div
+            v-if="activeCommentNoteId === note.NoteID"
+            class="comments-section"
+          >
+            <div
+              v-for="comment in comments[note.NoteID] || []"
+              :key="comment.CommentID"
+              class="comment-item"
+            >
+              <img
+                :src="comment.User?.avatar || userAvatar"
+                alt="User Avatar"
+                class="comment-avatar"
+              />
+              <div class="comment-content">
+                <span class="comment-username">{{
+                  comment.User?.userName || username
+                }}</span>
+                <p class="comment-text">{{ comment.Content }}</p>
+                <div class="comment-functions">
+                  <span
+                    @click="likeComment(comment.CommentID)"
+                    class="function-item"
+                    >点赞</span
+                  >
+                  <span
+                    @click="collectComment(comment.CommentID)"
+                    class="function-item"
+                    >收藏</span
+                  >
+                  <span
+                    @click="toggleSubCommentForm(comment.CommentID)"
+                    class="function-item"
+                    >评论</span
+                  >
+                </div>
+                <!-- 二级评论列表 -->
+                <div
+                  v-if="comment.SubComments && comment.SubComments.length > 0"
+                  class="sub-comments"
+                >
+                  <div
+                    v-for="subComment in comment.SubComments"
+                    :key="subComment.SubCommentID"
+                    class="sub-comment-item"
+                  >
+                    <img
+                      :src="
+                        subComment.User?.avatar ||
+                        '../../image/头像@2x\ \(1\).png'
+                      "
+                      alt="User Avatar"
+                      class="sub-comment-avatar"
+                    />
+                    <div class="sub-comment-content">
+                      <span class="sub-comment-username">{{
+                        subComment.User?.userName || "匿名用户"
+                      }}</span>
+                      <p class="sub-comment-text">{{ subComment.Content }}</p>
+                    </div>
+                  </div>
+                </div>
+                <!-- 二级评论输入框 -->
+                <div
+                  v-if="activeSubCommentId === comment.CommentID"
+                  class="sub-comment-form"
+                >
+                  <input
+                    v-model="newSubCommentContent[comment.CommentID]"
+                    placeholder="写下你的评论..."
+                  />
+                  <button @click="sendSubComment(comment.CommentID)">
+                    发送
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="new-comment">
+              <input
+                v-model="newCommentContent"
+                placeholder="写下你的评论..."
+              />
+              <button @click="sendComment(note.NoteID)">发送</button>
+            </div>
+          </div>
+          <!-- <button @click="handleDeleteNote(note.NoteID)">删除</button> -->
         </div>
+      </div>
+
+      <div class="personnal">
+        <div class="headPortrait">
+          <img :src="userAvatar" alt="用户头像" class="avatar" />
+        </div>
+        <div class="information">
+          <div class="name">{{ username }}</div>
+          <div class="identity">暂无身份</div>
+        </div>
+        <input v-model="newNote.title" placeholder="标题" class="title-input" />
+        <textarea
+          v-model="newNote.content"
+          placeholder="发布一条动态"
+          class="content fixed-textarea"
+        ></textarea>
+        <div class="image-upload-container">
+          <div class="image-preview">
+            <div
+              v-for="(image, index) in previewImages"
+              :key="index"
+              class="preview-item"
+            >
+              <img :src="image" alt="Preview" />
+              <span class="remove-image" @click="removeImage(index)">×</span>
+            </div>
+          </div>
+          <div class="image-upload">
+            <label for="file-input" class="upload-icon">+</label>
+            <input
+              id="file-input"
+              type="file"
+              @change="handleImageUpload"
+              multiple
+              accept="image/*"
+              style="display: none"
+            />
+          </div>
+        </div>
+        <button @click="addNewNote">发布动态</button>
       </div>
     </div>
   </div>
@@ -182,24 +564,36 @@ a {
 }
 .comment {
   width: 784px;
-  height: 483px;
+  height: auto;
+  background-color: #f4f8fa;
+  border: none;
+}
+.note {
+  width: 784px;
+  min-height: 200px; /* 设置最小高度 */
+  height: auto; /* 高度自适应 */
   background: #ffffff;
   border-radius: 10px;
-  margin-right: 20px;
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   border: 1px solid #ccc;
   border-radius: 5px;
+  margin: 0 0 30px 0;
+  padding: 24px 30px; /* 添加内边距 */
+  box-sizing: border-box; /* 确保padding不会增加整体宽度 */
 }
-.comment .headPortrait {
+.headPortrait {
   width: 46px;
   height: 46px;
-  background-image: url("../../image/蒙版组\ 1@2x\ \(1\).png");
+  background-image: url("../../image/微信图片_20240815195529.jpg");
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   margin: 24px 0px 0 30px;
   float: left;
+  border-radius: 50%;
 }
-.comment .information {
+.information {
   width: 144px;
   height: 24px;
   float: left;
@@ -213,8 +607,7 @@ a {
   float: left;
 }
 .time {
-  width: 51px;
-  height: 19px;
+  width: 192px;
   font-size: 14px;
   color: #bfbfbf;
   float: left;
@@ -228,6 +621,8 @@ a {
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   display: flex;
+  position: relative;
+  left: 320px;
 }
 .symbolPlus {
   width: 16px;
@@ -246,12 +641,11 @@ a {
   background-position: center; /* 设置背景图位置居中 */
 }
 .comment .content {
-  width: 372px;
-  height: 147px;
-  float: left;
-  position: absolute;
-  top: 90px;
-  left: 30px;
+  width: 100%; /* 宽度占满 */
+  min-height: 147px; /* 最小高度 */
+  height: auto; /* 高度自适应 */
+  position: relative; /* 改为相对定位 */
+  margin: 20px 0; /* 添加上下边距 */
 }
 .commentImgs {
   width: 700px;
@@ -271,13 +665,12 @@ a {
   margin: 5px;
 }
 .function {
-  width: 700px;
-  position: absolute;
-  top: 420px;
+  width: 100%; /* 宽度占满 */
   display: flex;
   align-items: center;
-  justify-self: center;
-  margin: 0 30px;
+  justify-content: flex-start; /* 左对齐 */
+  margin-top: auto; /* 将功能区推到底部 */
+  position: relative; /* 改为相对定位 */
 }
 
 .smallImg1 {
@@ -332,19 +725,27 @@ a {
 
 .personnal {
   width: 366px;
-  height: 330px;
+  height: auto; /* 改为自适应高度 */
+  min-height: 330px; /* 设置最小高度 */
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  padding-bottom: 20px; /* 添加底部内边距 */
+  margin-left: 20px;
 }
 .personnal .headPortrait {
   width: 60px;
   height: 60px;
   margin: 20px 24px;
-  background-image: url("../../image/头像@2x\ \(1\).png");
-  background-size: cover; /* 设置背景图覆盖整个容器 */
-  background-position: center; /* 设置背景图位置居中 */
   float: left;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.personnal .headPortrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .personnal .information {
   float: left;
@@ -353,14 +754,15 @@ a {
 .personnal .content {
   display: block;
   width: 290px;
-  height: 180px;
+  height: 100px; /* 将高度固定为100px */
   background: #ffffff;
   border: 1px solid;
   border-color: #707070;
   border-radius: 8px;
-  margin-top: 100px;
+  margin-top: 10px;
   margin-left: 23px;
   padding: 18px;
+  resize: none; /* 禁止用户调整大小 */
 }
 .newComments {
   position: absolute;
@@ -388,7 +790,7 @@ a {
 .hp1 {
   width: 46px;
   height: 46px;
-  background-image: url("../../image/头像@2x\ \(1\).png");
+  background-image: url("../../image/微信图片_20240815195529.jpg");
   background-size: cover; /* 设置背景图覆盖整个容器 */
   background-position: center; /* 设置背景图位置居中 */
   margin: 24px 0px 0 30px;
@@ -411,8 +813,8 @@ a {
 p {
   width: 700px;
   position: relative;
-  top: 70px;
-  left: -317px;
+  left: 80px;
+  margin-bottom: 40px;
 }
 button {
   width: 120px;
@@ -426,7 +828,213 @@ button {
   font-size: 18px;
   border-style: none;
   margin-top: 20px;
-  margin-left: 20px;
+  margin-right: 23px; /* 调整右边距 */
   float: right;
+}
+.title-input {
+  width: 290px;
+  margin: 10px 23px;
+  padding: 5px;
+  border: 1px solid #707070;
+  border-radius: 8px;
+}
+.image-upload-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 10px 23px;
+}
+
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 290px; /* 限制预览区域宽度 */
+}
+
+.preview-item {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.remove-image {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 18px;
+  height: 18px;
+  text-align: center;
+  line-height: 16px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.image-upload {
+  margin-left: 10px;
+}
+
+.upload-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  background-color: #f0f0f0;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.upload-icon:hover {
+  background-color: #e0e0e0;
+}
+
+.fixed-textarea {
+  width: 290px;
+  height: 100px;
+  resize: none;
+  background: #ffffff;
+  border: 1px solid #707070;
+  border-radius: 8px;
+  margin-top: 10px;
+  margin-left: 23px;
+  padding: 18px;
+  font-size: 14px;
+  font-family: Microsoft YaHei;
+}
+
+.comments-section {
+  margin-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 10px;
+}
+
+.comment-item {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.comment-avatar,
+.sub-comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.comment-content,
+.sub-comment-content {
+  flex: 1;
+  max-width: 600px; /* 设置最大宽度，可以根据需要调整 */
+}
+
+.comment-username,
+.sub-comment-username {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.comment-functions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 5px;
+}
+
+.function-item {
+  margin-right: 15px;
+  cursor: pointer;
+  color: #666;
+}
+
+.function-item:hover {
+  color: #32db5a;
+}
+
+.sub-comments {
+  margin-left: 50px;
+  margin-top: 10px;
+}
+
+.sub-comment-item {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.sub-comment-avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.new-comment,
+.sub-comment-form {
+  display: flex;
+  margin-top: 10px;
+}
+
+.new-comment input,
+.sub-comment-form input {
+  flex: 1;
+  padding: 5px;
+  margin-right: 10px;
+  width: 600px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.new-comment button,
+.sub-comment-form button {
+  padding: 5px 10px;
+  background-color: #32db5a;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.comment-text,
+.sub-comment-text {
+  word-wrap: break-word; /* 允许长单词或 URL 地址换行到下一行 */
+  overflow-wrap: break-word; /* 在长单词或 URL 地址内部进行换行 */
+  white-space: pre-wrap; /* 保留空白符序列，但是正常地进行换行 */
+  width: 100%; /* 使用全宽 */
+  max-width: 100%; /* 确保不会超出父元素 */
+  position: relative;
+  left: 0;
+}
+
+.note-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 10px 77px;
+}
+
+.note-content {
+  margin-bottom: 15px;
+}
+
+.note-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 66px;
+}
+
+.note-image {
+  max-width: 150px;
+  height: auto;
+  border-radius: 5px;
 }
 </style>

@@ -28,11 +28,7 @@ const loginUser = () => {
     alert("密码不能为空");
     return;
   }
-  // 检查密码长度是否大于等于6位
-  if (password.value.length < 6) {
-    alert("密码必须大于等于六位数");
-    return false; // 阻止表单提交
-  }
+
   try {
     // 定义要传递的数据对象
     const data = {
@@ -42,31 +38,23 @@ const loginUser = () => {
 
     // 发送 POST 请求
     axios
-      .post("http://www.femto.fun/user-login", Qs.stringify(data))
+      .post("https://www.femto.fun/user-login", Qs.stringify(data))
       .then((response) => {
         const loginRes = response.data; // 获取响应数据
 
-        if (response.status === 200) {
-          if (loginRes.code === 200) {
-            console.log(loginRes);
-
-            if (loginRes.data.token) {
-              // 使用Vuex保存token
-              store.dispatch("saveToken", loginRes.data.token);
-              console.log("Token saved successfully to Vuex!");
-              console.log(loginRes.data.token);
-            }
-
-            router.push("/home");
-            alert("登录成功");
-          } else if (loginRes.code === 401) {
-            console.log(loginRes);
-            alert("密码错误");
-          } else {
-            console.log(loginRes);
-            alert("登录失败");
-            alert(loginRes.msg);
+        if (response.status === 200 && loginRes.code === 200) {
+          if (loginRes.data.token) {
+            // 使用新的 Vuex action 保存 token
+            store.dispatch("saveToken", loginRes.data.token);
+            // 登录成功后立即获取用户信息
+            store.dispatch("user/fetchUserInfo");
+            store.dispatch("user/fetchBodyData");
+            console.log("Token 成功保存到 Vuex!");
+            console.log(loginRes.data.token);
           }
+
+          router.push("/home");
+          alert("登录成功");
         } else {
           console.error("登录请求失败:", response);
           alert("登录失败");
@@ -79,6 +67,87 @@ const loginUser = () => {
   } catch (error) {
     console.error(error);
     alert("登录失败");
+  }
+};
+
+const fetchUserInfo = async () => {
+  try {
+    console.log("Fetching user info with token:", token.value);
+    const response = await axios.get("https://www.femto.fun/user/information", {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+    console.log("API response:", response.data);
+    const { code, data } = response.data;
+    if (code === 200 && data) {
+      const userInfo = {
+        username: data.userName || "",
+        introduction: data.introduction || "",
+        birth: data.birth ? data.birth.split("T")[0] : "",
+        avatar: data.avatar || "",
+      };
+      // 更新本地form
+      form.value = { ...userInfo };
+      // 将用户信息存储到Vuex
+      store.commit("user/setUserInfo", userInfo);
+      console.log("Updated user info in Vuex:", userInfo);
+    } else {
+      console.error("未能获取到有效的用户信息");
+      ElMessage.warning("未能获取到有效的用户信息，请稍后重试");
+    }
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+      console.error("Error status:", error.response.status);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error setting up request:", error.message);
+    }
+    ElMessage.error("获取用户信息失败，请重试");
+  }
+};
+
+const fetchBodyData = async () => {
+  try {
+    console.log("Fetching body data with token:", token.value);
+    const response = await axios.get("https://www.femto.fun/user/data", {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+    console.log("API response:", response.data);
+    const { code, data } = response.data;
+    if (code === 200 && data) {
+      bodyData.value = {
+        height: data.height === -1 ? null : data.height,
+        weight: data.weight === -1 ? null : data.weight,
+        blood_pressure: data.bloodPressure || "",
+        blood_sugar: data.bloodSugar || "",
+        basal_metabolism:
+          data.basalMetabolism === -1 ? null : data.basalMetabolism,
+        heart_rate: data.heartRate === -1 ? null : data.heartRate,
+        step_count: data.stepCount === -1 ? null : data.stepCount,
+        water_intake: data.waterIntake === -1 ? null : data.waterIntake,
+        age: data.age === -1 ? null : data.age,
+        gender: data.gender === -1 ? null : data.gender,
+      };
+      console.log("Updated body data:", bodyData.value);
+    } else {
+      console.error("未能获取到有效的身体数据");
+      ElMessage.warning("未能获取到有效的身体数据，请稍后重试");
+    }
+  } catch (error) {
+    console.error("获取身体数据失败:", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+      console.error("Error status:", error.response.status);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error setting up request:", error.message);
+    }
+    ElMessage.error(error.response?.data?.msg || "获取身体数据失败，请重试");
   }
 };
 </script>
@@ -207,7 +276,7 @@ body {
   width: 400px;
   height: 650px;
   background: #ffffff;
-  border-radius: 0px 20px 20px 0px;
+  border-radius: 20px 20px 20px 20px;
   margin: 120px 0;
   float: left;
   padding: 0 27px;

@@ -3,6 +3,7 @@ import { createApp } from 'vue'; // 从vue中导入createApp函数
 import './style.css';
 import App from './App.vue';
 import router from './router';
+import store from './store';
 import Navigation from './components/Navigation.vue';
 import userCenterNavigation from './components/userCenterNavigation.vue';
 import mealRecommand from './components/mealRecommand.vue';
@@ -14,20 +15,21 @@ import shoppingCartItem from './components/shoppingCartItem.vue';
 import comment from './components/comment.vue';
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-import store from './store/index';
 
-createApp(App).use(router)
-    .use(ElementPlus)
-    .use(store)
-    .component('Navigation', Navigation)
-    .component('userCenterNavigation', userCenterNavigation)
-    .component('mealRecommand', mealRecommand)
-    .component('products', products)
-    .component('carousel', carousel)
-    .component('Address', Address)
-    .component('order', order)
-    .component('shoppingCartItem', shoppingCartItem)
-    .component('comment', comment)
-    .mount('#app'); // 使用createApp函数创建Vue应用，并将导入的组件注册到应用中
+const app = createApp(App);
+
+app.use(store);
+app.use(router);
+app.use(ElementPlus)
+app.component('Navigation', Navigation)
+app.component('userCenterNavigation', userCenterNavigation)
+app.component('mealRecommand', mealRecommand)
+app.component('products', products)
+app.component('carousel', carousel)
+app.component('Address', Address)
+app.component('order', order)
+app.component('shoppingCartItem', shoppingCartItem)
+app.component('comment', comment)
+app.mount('#app'); // 使用createApp函数创建Vue应用，并将导入的组件注册到应用中
 
 

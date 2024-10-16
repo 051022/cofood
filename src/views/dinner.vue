@@ -1,30 +1,47 @@
 <script setup>
+import { ref, onMounted } from "vue";
 import axios from "axios";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
 
-const router = useRouter();
-
-// 定义 ref
 const foods = ref([]);
 
-// 发起 Axios 请求
-axios
-  .get("http://www.femto.fun/food-recommend", {
-    params: {
-      type: 2,
-    },
-  })
-  .then((response) => {
-    if (response.data.code === 200) {
-      foods.value = response.data.data;
-    } else {
-      console.error("Failed to fetch foods:", response.data);
-    }
-  })
-  .catch((error) => {
-    console.error("Error fetching foods:", error);
-  });
+const apiUrl = "http://8.134.144.65:8083/cofood";
+
+onMounted(() => {
+  axios
+    .post(
+      `${apiUrl}/recommend`,
+      {
+        age: "18",
+        gender: "2",
+        height: "170",
+        weight: "60",
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((response) => {
+      if (response.data.code === 200) {
+        foods.value = response.data.dinner;
+      } else {
+        console.error("Failed to fetch foods:", response.data);
+      }
+    })
+    .catch((error) => {
+      console.error("Error details:", error);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+    });
+});
 </script>
 
 <template>
@@ -41,14 +58,13 @@ axios
       <ul>
         <li v-for="food in foods" :key="food.foodName" class="food">
           <img
-            :src="'http://www.femto.fun/' + food.picture"
+            :src="`${apiUrl}/${food.picture}`"
             alt="Food Image"
             class="img1"
           />
-
           <div class="food-info">
             <div>{{ food.foodName }}</div>
-            <div>{{ food.calories }} 卡路里</div>
+            <div>{{ food.quality }} 卡路里</div>
           </div>
         </li>
       </ul>

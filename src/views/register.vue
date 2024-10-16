@@ -22,7 +22,7 @@ const sendVerificationCode = async () => {
   try {
     const res = await axios({
       method: "post",
-      url: `http://www.femto.fun/verify-email?email=${email.value}&action=0`,
+      url: `https://www.femto.fun/verify-email?email=${email.value}&action=0`,
     });
 
     // 检查请求是否成功
@@ -78,17 +78,14 @@ const RegisterUser = async () => {
 
     // 发送 POST 请求
     axios
-      .post(
-        "http://127.0.0.1:4523/m1/4260973-0-default/user-register-email",
-        Qs.stringify(data)
-      )
+      .post("https://www.femto.fun/user-register-email", Qs.stringify(data))
       .then((response) => {
         const Res = response.data; // 获取响应数据
         if (response.status === 200) {
           if (Res.code === 201) {
             console.log(loginRes);
             alert("注册成功");
-            router.push("/home");
+            router.push("/userInformaton");
           } else if (Res.code === 401) {
             console.log(Res);
             alert("验证码错误");

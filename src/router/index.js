@@ -1,7 +1,5 @@
-
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
-
-
+import store from '../store'; // 确保正确导入store
 
 const login = () => import('../views/login.vue')
 const register = () => import('../views/register.vue')
@@ -21,11 +19,19 @@ const recipe = () => import('../views/recipe.vue')
 const shoppingCart = () => import('../views/shoppingCart.vue')
 const orders = () => import('../views/orders.vue')
 const collection = () => import('../views/collection.vue')
+const AIPage = () => import('../views/AIPage.vue')
+const detailProducts = () => import('../views/detailProducts.vue')
+const search = () => import('../views/search.vue')
+
 
 // 定义路由
 const routes = [
   {
     path: '/',
+    redirect: '/login'  // 将根路径重定向到 /login
+  },
+  {
+    path: '/login',
     name: 'login',
     component: login,
   },
@@ -114,6 +120,22 @@ const routes = [
     name: 'collection',
     component: collection
   },
+  {
+    path: '/AIPage',
+    name: 'AIPage',
+    component: AIPage
+  },
+  {
+    path: '/detailProducts',
+    name: 'detailProducts',
+    component: detailProducts
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: search
+  },
+
 ]
 
 // 创建实例
@@ -126,7 +148,7 @@ const router = createRouter({
 const authUrls = ['user']
 
 router.beforeEach((to, from, next) => {
-  if (!authUrls.includes(to.path)) {
+  if (to.path === '/login' || !authUrls.includes(to.path)) {
     next()
     return
   }
@@ -135,11 +157,10 @@ router.beforeEach((to, from, next) => {
   if (token) {
     next()
   } else {
-    next('/')
+    next('/login')
     alert('请先登录')
   }
 })
-
 
 // 暴露
 export default router

@@ -4,151 +4,209 @@
     <div class="banner">
       <div class="leftBanner">
         <el-form :model="form" label-width="auto" style="max-width: 600px">
-          <!-- 行内表单 -->
-          <el-form
-            :inline="true"
-            :model="form"
-            label-width="auto"
-            style="max-width: 600px; margin: 0 28px"
-          >
-            <el-form-item label="头像:">
-              <el-upload
-                class="avatar-uploader"
-                action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-                :show-file-list="false"
-                :on-success="handleAvatarSuccess"
-                :before-upload="beforeAvatarUpload"
-              >
-                <img v-if="imageUrl" :src="imageUrl" class="avatar" />
+          <el-form-item label="头像:">
+            <div class="avatar-container">
+              <div class="avatar-preview">
+                <img
+                  v-if="previewImage || form.avatar"
+                  :src="previewImage || form.avatar"
+                  alt="Avatar"
+                  class="avatar"
+                />
                 <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-              </el-upload>
-            </el-form-item>
-            <!-- 按钮 -->
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="onSubmit"
-                style="background-color: #32db5a"
-                >更换头像</el-button
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleAvatarUpload"
+                style="display: none"
+                ref="fileInput"
+              />
+              <el-button @click="$refs.fileInput.click()" type="primary"
+                >选择头像</el-button
               >
-            </el-form-item>
-          </el-form>
-
-          <!-- 用户名 -->
-          <el-form-item label="用户名:">
-            <el-col :span="11"> <el-input v-model="form.name" /></el-col>
+              <el-button v-if="previewImage" @click="removeImage" type="danger"
+                >删除头像</el-button
+              >
+            </div>
           </el-form-item>
-          <!-- 文本 -->
+
+          <el-form-item label="用户名:">
+            <el-input v-model="form.username" />
+          </el-form-item>
+
           <el-form-item label="简介:">
             <el-input
               type="textarea"
-              resize="none"
               :rows="5"
-              v-model="form.desc"
+              v-model="form.introduction"
             ></el-input>
           </el-form-item>
 
-          <!-- 单选 -->
-          <el-form-item label="性别:">
-            <el-radio-group v-model="form.resource">
-              <el-radio value="man">男</el-radio>
-              <el-radio value="woman">女</el-radio>
-              <el-radio value="secret">保密</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <!-- 年龄 -->
-          <el-form-item label="年龄:">
-            <el-col :span="11">
-              <el-text>{{ form.age }}</el-text>
-            </el-col>
-          </el-form-item>
-
-          <!-- 时间 -->
           <el-form-item label="出生日期:">
-            <el-col :span="11">
-              <el-date-picker
-                v-model="form.date1"
-                type="date"
-                placeholder="请选择日期"
-                style="width: 100%"
-              />
-            </el-col>
+            <el-date-picker
+              v-model="form.birth"
+              type="date"
+              placeholder="请选择日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+            />
           </el-form-item>
 
           <el-form-item>
-            <el-button
-              type="primary"
-              @click="onSubmit"
-              style="background-color: #32db5a"
-              >提交</el-button
-            >
-            <el-button>重置</el-button>
+            <el-button type="primary" @click="onSubmit">提交</el-button>
+            <el-button @click="resetForm">重置</el-button>
           </el-form-item>
         </el-form>
       </div>
     </div>
   </div>
+  <div v-if="isDevelopment">
+    <h3>调试信息：</h3>
+    <pre>{{ JSON.stringify(form, null, 2) }}</pre>
+  </div>
 </template>
 
-<script lang="ts" setup>
-import { reactive, watch, ref } from "vue";
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
+import axios from "axios";
 import { ElMessage } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 
-import type { UploadProps } from "element-plus";
+const store = useStore();
+const token = computed(() => store.getters.token);
 
-const imageUrl = ref("");
+// 将form改为ref，并从store中获取初始值
+const form = ref({ ...store.state.user.userInfo });
 
-const handleAvatarSuccess: UploadProps["onSuccess"] = (
-  response,
-  uploadFile
-) => {
-  imageUrl.value = URL.createObjectURL(uploadFile.raw!);
-};
+const previewImage = ref("");
 
-const beforeAvatarUpload: UploadProps["beforeUpload"] = (rawFile) => {
-  if (rawFile.type !== "image/jpeg") {
-    ElMessage.error("Avatar picture must be JPG format!");
-    return false;
-  } else if (rawFile.size / 1024 / 1024 > 2) {
-    ElMessage.error("Avatar picture size can not exceed 2MB!");
-    return false;
+// 添加这行来判断是否为开发环境
+const isDevelopment = import.meta.env.MODE === "development";
+
+const fetchUserInfo = async () => {
+  try {
+    console.log("Fetching user info with token:", token.value);
+    const response = await axios.get("https://www.femto.fun/user/information", {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+    console.log("API response:", response.data);
+    const { code, data } = response.data;
+    if (code === 200 && data) {
+      const userInfo = {
+        username: data.userName || "",
+        introduction: data.introduction || "",
+        birth: data.birth ? data.birth.split("T")[0] : "",
+        avatar: data.avatar || "",
+      };
+      // 更新本地form
+      form.value = { ...userInfo };
+      // 将用户信息存储到Vuex
+      store.commit("user/setUserInfo", userInfo);
+      console.log("Updated user info in Vuex:", userInfo);
+    } else {
+      console.error("未能获取到有效的用户信息");
+      ElMessage.warning("未能获取到有效的用户信息，请稍后重试");
+    }
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+      console.error("Error status:", error.response.status);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error setting up request:", error.message);
+    }
+    ElMessage.error("获取用户信息失败，请重试");
   }
-  return true;
 };
 
-const form = reactive({
-  name: "",
-  date1: "",
-  resource: "",
-  desc: "",
-  age: "",
+const handleAvatarUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size / 1024 / 1024 > 2) {
+      ElMessage.error("图片大小不能超过 2MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImage.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const removeImage = () => {
+  previewImage.value = "";
+  form.value.avatar = "";
+};
+
+const onSubmit = async () => {
+  if (
+    !form.value.username &&
+    !form.value.introduction &&
+    !form.value.birth &&
+    !previewImage.value
+  ) {
+    ElMessage.warning("请至少填写一项信息");
+    return;
+  }
+
+  const formData = new FormData();
+  if (form.value.username) formData.append("username", form.value.username);
+  if (form.value.introduction)
+    formData.append("introduction", form.value.introduction);
+  if (form.value.birth) formData.append("birth", form.value.birth);
+
+  if (previewImage.value) {
+    const response = await fetch(previewImage.value);
+    const blob = await response.blob();
+    formData.append("avatar", blob, "avatar.jpg");
+  }
+
+  try {
+    const response = await axios.post(
+      "https://www.femto.fun/user/information",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("个人信息更新成功:", response.data);
+    ElMessage.success(response.data.msg || "个人信息更新成功");
+    await fetchUserInfo(); // 重新获取用户信息以更新显示
+  } catch (error) {
+    console.error("更新个人信息失败:", error);
+    ElMessage.error(error.response?.data?.msg || "更新个人信息失败，请重试");
+  }
+};
+
+const resetForm = () => {
+  form.value = {
+    username: "",
+    introduction: "",
+    birth: "",
+    avatar: "",
+  };
+  previewImage.value = "";
+};
+
+onMounted(() => {
+  console.log("Token:", token.value);
+  if (!token.value) {
+    ElMessage.warning("未检测到登录状态，请先登录");
+    // 可以在这里添加重定向到登录页面的逻辑
+  } else {
+    fetchUserInfo();
+  }
 });
-
-const text = ref("");
-const textarea = ref("");
-
-const calculateAge = (birthDate: string) => {
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
-};
-
-watch(
-  () => form.date1,
-  (newDate) => {
-    form.age = newDate ? calculateAge(newDate).toString() : "";
-  }
-);
-
-const onSubmit = () => {
-  console.log("submit!");
-};
 </script>
 
 <style scoped>
@@ -166,7 +224,7 @@ body {
 .banner {
   width: 1160px;
   position: absolute;
-  top: 90px;
+  top: 120px;
 }
 .leftBanner {
   width: 842px;
@@ -203,5 +261,33 @@ textarea {
   width: 88px;
   height: 88px;
   text-align: center;
+}
+
+.avatar-container {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-right: 20px;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
 }
 </style>

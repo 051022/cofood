@@ -1,68 +1,92 @@
-<script>
-export default {
-  data() {
-    return {
-      currentPath: "/home", // 初始默认为首页
-    };
-  },
-  // methods 对象包含一个名为 setActivePath 的方法，用于设置 currentPath 的值为传入的路径。
-  methods: {
-    setActivePath(path) {
-      this.currentPath = path;
-    },
-  },
-  // watch 对象用于监听 $route 对象的变化。$route 包含了当前路由信息。
-  // 当路由发生变化时，会调用 setActivePath 方法来更新 currentPath
-  watch: {
-    $route(to, from) {
-      this.setActivePath(to.path);
-    },
-  },
-  mounted() {
-    // 在组件挂载时，设置初始 active 路径
-    this.setActivePath(this.$route.path);
-  },
+<script setup>
+import { ref, computed } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+
+const store = useStore();
+const router = useRouter();
+
+const isLoggedIn = computed(() => !!store.getters.token);
+const username = computed(() => store.state.user.userInfo.username || "用户");
+
+const userAvatar = computed(() => {
+  const avatar = store.state.user.userInfo.avatar;
+  if (avatar && avatar.startsWith("http")) {
+    return avatar;
+  } else if (avatar) {
+    return `https://www.femto.fun${avatar}`;
+  } else {
+    return "../../image/头像@2x.png";
+  }
+});
+
+const goToSearch = () => {
+  router.push("/search");
 };
+
+const goToAIPage = () => {
+  router.push("/AIPage");
+};
+
+const handleLoginLogout = () => {
+  if (isLoggedIn.value) {
+    store.dispatch("logout");
+    alert("已退出登录");
+    alert("重新登录需要刷新页面");
+    setInterval(() => {
+      router.push("/login");
+    }, 1500);
+  } else {
+    router.push("/login");
+  }
+};
+
+const userInfo = computed(() => store.state.user.userInfo);
+const avatar = computed(() => userInfo.value.avatar || "默认头像URL");
 </script>
+
 <template>
   <div class="navigation">
     <div class="logo"></div>
     <router-link to="/home">
-      <div class="subfield" :class="{ active: currentPath === '/home' }">
+      <div class="subfield" :class="{ active: $route.path === '/home' }">
         首页
       </div>
     </router-link>
     <router-link to="/recommand">
-      <div class="subfield" :class="{ active: currentPath === '/recommand' }">
+      <div class="subfield" :class="{ active: $route.path === '/recommand' }">
         推荐
       </div>
     </router-link>
     <router-link to="/community">
-      <div class="subfield" :class="{ active: currentPath === '/community' }">
+      <div class="subfield" :class="{ active: $route.path === '/community' }">
         社区
       </div>
     </router-link>
     <router-link to="/shopping">
-      <div class="subfield" :class="{ active: currentPath === '/shopping' }">
+      <div class="subfield" :class="{ active: $route.path === '/shopping' }">
         购物
       </div>
     </router-link>
-    <div class="search">
+    <div class="search" @click="goToSearch">
       <div class="img"><img src="../../image/消息@2x.png" alt="" /></div>
-      <input type="text" />
+      <input type="text" placeholder="点击搜索" readonly />
     </div>
     <div class="account">
       <router-link to="/user">
-        <img src="../../image/头像@2x.png" alt="" />
+        <img :src="userAvatar" alt="用户头像" />
       </router-link>
     </div>
-    <router-link to="/"><button>点击登录</button></router-link>
+    <button @click="handleLoginLogout">
+      {{ isLoggedIn ? "退出登录" : "点击登录" }}
+    </button>
+    <button v-if="isLoggedIn" @click="goToAIPage" class="ai-button">
+      唤醒健康管家
+    </button>
   </div>
 </template>
 
-
-
-<style>
+<style scoped>
 a {
   text-decoration: none; /* 取消下划线 */
 }
@@ -72,7 +96,7 @@ a {
   background: #ffffff;
   position: sticky;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .logo {
@@ -121,16 +145,6 @@ a {
 .subfield.active {
   color: black;
 }
-.search {
-  width: 474px;
-  height: 40px;
-  background: #f4f8fa;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  margin-top: 20px;
-  margin-left: 69px;
-}
 .account {
   width: 44px;
   height: 44px;
@@ -150,11 +164,15 @@ a {
   width: 35px;
   height: 35px;
   margin: 5px;
+  border-radius: 50%; /* 添加圆角,使头像呈圆形 */
+  object-fit: cover; /* 确保图片填充整个空间 */
 }
-input {
+.search input {
+  width: 250px;
   height: 35px;
-  width: 400px;
   border-style: none;
+  background-color: transparent;
+  cursor: pointer;
 }
 .navigation button {
   width: 120px;
@@ -169,5 +187,50 @@ input {
   border-style: none;
   margin-top: 20px;
   margin-left: 20px;
+}
+
+.search {
+  width: 300px; /* 减小搜索框宽度 */
+  height: 40px;
+  background: #f4f8fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  margin-left: 69px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.search:hover {
+  background-color: #e8ecee;
+}
+
+.search input {
+  width: 250px; /* 调整输入框宽度 */
+  height: 35px;
+  border-style: none;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.search input::placeholder {
+  color: #999;
+}
+
+.ai-button {
+  width: 120px;
+  height: 40px;
+  background: #32db5a;
+  border-radius: 8px;
+  line-height: normal;
+  font-family: Microsoft YaHei;
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 14px;
+  border-style: none;
+  margin-top: 20px;
+  margin-left: 10px;
+  cursor: pointer;
 }
 </style>
